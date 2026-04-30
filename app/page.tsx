@@ -85,10 +85,9 @@ export default function Page() {
             <Terminal className="text-white w-12 h-12 stroke-[3]" />
           </div>
           
-          <h1 className="text-3xl font-black tracking-tighter text-slate-950 dark:text-white uppercase italic leading-none mb-1 text-center">
-            Ativo<span className="text-sky-600">Terminal</span>
+          <h1 className="text-3xl font-black tracking-tighter text-slate-950 dark:text-white uppercase italic leading-none mb-10 text-center">
+            PAINEL DE <span className="text-sky-600">SUCATEAMENTO</span>
           </h1>
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em] mb-10 text-center">Advanced Fleet Management</p>
           
           <form onSubmit={handleAuth} className="space-y-4 mb-8">
             <div className="space-y-4">

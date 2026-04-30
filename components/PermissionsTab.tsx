@@ -18,7 +18,11 @@ export default function PermissionsTab() {
     e.preventDefault();
     if (!email) return;
     setIsSubmitting(true);
-    await setRole(email.toLowerCase().trim(), role, warehouse || null);
+    let identifier = email.trim();
+    if (!identifier.includes('@')) {
+      identifier = `${identifier.replace(/\s+/g, '.').toLowerCase()}@ativoterminal.app`;
+    }
+    await setRole(identifier, role, warehouse || null);
     setEmail('');
     setWarehouse('');
     setIsSubmitting(false);
@@ -111,14 +115,14 @@ export default function PermissionsTab() {
             
             <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
               <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">Endereço de Identificação (Email)</label>
+                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">Identificador (Usuário ou Email)</label>
                 <div className="relative group">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-600 group-focus-within:text-sky-600 transition-colors" />
                   <input 
-                    type="email" 
+                    type="text" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="id@corp.com.br"
+                    placeholder="andre.carvalho"
                     className="w-full bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.05] rounded-2xl px-12 py-4 text-xs font-mono text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-700 focus:border-sky-500/50 focus:ring-4 focus:ring-sky-500/5 transition-all outline-none"
                     required
                   />
@@ -237,26 +241,27 @@ export default function PermissionsTab() {
                         </div>
                       </td>
                       <td className="px-8 py-6">
-                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-[9px] font-black tracking-[0.2em] uppercase border ${
-                          uRole.role === 'ADMIN' ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-100 dark:border-red-500/20' :
-                          uRole.role === 'ANALYST' ? 'bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-100 dark:border-sky-500/20' :
-                          'bg-slate-50 dark:bg-white/[0.03] text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/[0.05]'
-                        }`}>
-                          {uRole.role}
-                        </div>
+                        <select 
+                          value={uRole.role}
+                          onChange={(e) => setRole(uRole.email, e.target.value as any, uRole.warehouse)}
+                          className="bg-transparent text-[9px] font-black tracking-[0.2em] uppercase border-none focus:ring-0 focus:outline-none cursor-pointer p-0 w-full"
+                        >
+                          <option value="TECHNICIAN">TECHNICIAN</option>
+                          <option value="ANALYST">ANALYST</option>
+                          <option value="ADMIN">ADMIN</option>
+                        </select>
                       </td>
                       <td className="px-8 py-6">
-                        {uRole.warehouse ? (
-                          <div className="flex items-center gap-2 text-sky-600/60 dark:text-sky-400/60 uppercase text-[10px] font-black tracking-widest">
-                            <div className="w-1.5 h-1.5 bg-sky-600/40 dark:bg-sky-400/40 rounded-full" />
-                            {uRole.warehouse}
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 uppercase text-[9px] font-black tracking-[0.2em] italic">
-                            <div className="w-1.5 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full" />
-                            Global Access
-                          </div>
-                        )}
+                        <select 
+                          value={uRole.warehouse || ''}
+                          onChange={(e) => setRole(uRole.email, uRole.role, e.target.value || null)}
+                          className="bg-transparent text-[9px] font-black tracking-[0.2em] uppercase border-none focus:ring-0 focus:outline-none cursor-pointer p-0 w-full text-slate-500 dark:text-slate-400"
+                        >
+                          <option value="">GLOBAL ACCESS</option>
+                          {WAREHOUSES.map(wh => (
+                            <option key={wh} value={wh}>{wh}</option>
+                          ))}
+                        </select>
                       </td>
                       <td className="px-8 py-6 text-right">
                         <button 
