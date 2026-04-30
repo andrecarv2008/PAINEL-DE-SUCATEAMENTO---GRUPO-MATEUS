@@ -2,16 +2,29 @@
 
 import { Terminal, Settings, ShieldCheck, Moon, Sun } from 'lucide-react';
 import { useTheme } from '@/components/ThemeProvider';
+import { useSettings } from '@/lib/firestore-service';
+import Image from 'next/image';
 
 export default function Header() {
   const { theme, toggleTheme } = useTheme();
+  const { settings } = useSettings();
 
   return (
     <header className="bg-white/90 dark:bg-slate-950/90 backdrop-blur-md fixed top-0 w-full z-50 border-b border-slate-200 dark:border-white/[0.05] shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-colors duration-300">
       <div className="flex justify-between items-center px-10 h-16 w-full">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-slate-950 dark:bg-sky-600 rounded flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.1)]">
-            <Terminal className="text-white w-6 h-6 stroke-[3]" />
+          <div className="w-10 h-10 bg-slate-950 dark:bg-sky-600 rounded flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.1)] overflow-hidden relative">
+            {settings?.logo ? (
+              <Image 
+                src={settings.logo} 
+                alt="Mateus Logo" 
+                fill 
+                className="object-contain p-1"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <Terminal className="text-white w-6 h-6 stroke-[3]" />
+            )}
           </div>
           <div className="flex flex-col">
             <h1 className="text-xl font-black tracking-tighter text-slate-900 dark:text-white uppercase italic leading-none">

@@ -49,9 +49,19 @@
             "confirmTechnicalWithdrawal": { "type": "boolean" },
             "viewGeneralHistory": { "type": "boolean" },
             "managePermissions": { "type": "boolean" },
-            "deleteRecords": { "type": "boolean" }
+            "deleteRecords": { "type": "boolean" },
+            "importData": { "type": "boolean" }
           }
         }
+      }
+    },
+    "AppSettings": {
+      "title": "App Settings",
+      "description": "Global application configuration",
+      "type": "object",
+      "properties": {
+        "logo": { "type": "string", "description": "Base64 or URL for the app logo" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       }
     }
   },
@@ -67,6 +77,10 @@
     "rolePermissions": {
       "schema": "RolePermission",
       "description": "Dynamic role-based access control settings"
+    },
+    "settings": {
+      "schema": "AppSettings",
+      "description": "Global configuration such as logos and themes"
     }
   }
 }

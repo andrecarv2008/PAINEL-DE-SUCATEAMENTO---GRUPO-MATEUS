@@ -7,6 +7,7 @@ import RegistrationTab from '@/components/RegistrationTab';
 import DashboardTab from '@/components/DashboardTab';
 import HistoryTab from '@/components/HistoryTab';
 import PermissionsTab from '@/components/PermissionsTab';
+import ImportTab from '@/components/ImportTab';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRegistrations } from '@/lib/firestore-service';
 import { useAuth } from '@/hooks/useAuth';
@@ -116,6 +117,9 @@ export default function Page() {
               )}
               {activeTab === 'permissions' && permissions?.managePermissions && (
                 <PermissionsTab key="perm" />
+              )}
+              {activeTab === 'import' && permissions?.importData && (
+                <ImportTab key="import" />
               )}
               
               {/* Fallback if user somehow lands on a restricted tab */}

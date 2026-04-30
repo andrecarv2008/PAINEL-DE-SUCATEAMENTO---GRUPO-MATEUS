@@ -17,12 +17,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as Theme | null;
-    setTimeout(() => {
-      if (savedTheme) {
-        setTheme(savedTheme);
-      }
-      setMounted(true);
-    }, 0);
+    if (savedTheme) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTheme(savedTheme);
+    }
+    setMounted(true);
   }, []);
 
   useEffect(() => {

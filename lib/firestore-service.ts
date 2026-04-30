@@ -126,6 +126,7 @@ export interface RolePermissions {
     viewGeneralHistory: boolean;
     managePermissions: boolean;
     deleteRecords: boolean;
+    importData: boolean;
   };
 }
 
@@ -159,7 +160,8 @@ export function useRolePermissions() {
             confirmTechnicalWithdrawal: false,
             viewGeneralHistory: false,
             managePermissions: false,
-            deleteRecords: false
+            deleteRecords: false,
+            importData: false
           };
 
       await setDoc(docRef, {
@@ -235,4 +237,40 @@ export function useRegistrations(filterWarehouse: string | null = null) {
   };
 
   return { registrations, loading, addRegistration, confirmRegistration, deleteRegistration };
+}
+
+export interface AppSettings {
+  logo?: string | null;
+}
+
+export function useSettings() {
+  const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(doc(db, 'settings', 'app'), (snapshot) => {
+      if (snapshot.exists()) {
+        setSettings(snapshot.data() as AppSettings);
+      }
+      setLoading(false);
+    }, (error) => {
+      // It's fine if the document doesn't exist yet
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const updateLogo = async (logoData: string | null) => {
+    try {
+      const { setDoc, doc } = await import('firebase/firestore');
+      await setDoc(doc(db, 'settings', 'app'), {
+        logo: logoData,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'settings/app');
+    }
+  };
+
+  return { settings, loading, updateLogo };
 }

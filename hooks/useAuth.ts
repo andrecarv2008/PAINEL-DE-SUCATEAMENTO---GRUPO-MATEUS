@@ -41,7 +41,8 @@ export function useAuth() {
             confirmTechnicalWithdrawal: true,
             viewGeneralHistory: true,
             managePermissions: true,
-            deleteRecords: true
+            deleteRecords: true,
+            importData: true
           });
           setLoading(false);
         } else {
@@ -60,8 +61,8 @@ export function useAuth() {
                 } else {
                   // Fallback defaults
                   const defaults: any = {
-                    TECHNICIAN: { viewDashboard: true, registerWithdrawal: true, accessAnalystPanel: false, confirmTechnicalWithdrawal: false, viewGeneralHistory: true, managePermissions: false, deleteRecords: false },
-                    ANALYST: { viewDashboard: true, registerWithdrawal: true, accessAnalystPanel: true, confirmTechnicalWithdrawal: true, viewGeneralHistory: true, managePermissions: false, deleteRecords: false }
+                    TECHNICIAN: { viewDashboard: true, registerWithdrawal: true, accessAnalystPanel: false, confirmTechnicalWithdrawal: false, viewGeneralHistory: true, managePermissions: false, deleteRecords: false, importData: false },
+                    ANALYST: { viewDashboard: true, registerWithdrawal: true, accessAnalystPanel: true, confirmTechnicalWithdrawal: true, viewGeneralHistory: true, managePermissions: false, deleteRecords: false, importData: true }
                   };
                   setPermissions(defaults[userRole] || null);
                 }
@@ -70,7 +71,7 @@ export function useAuth() {
             } else {
               setRole('TECHNICIAN');
               setWarehouse(null);
-              setPermissions({ viewDashboard: true, registerWithdrawal: true, accessAnalystPanel: false, confirmTechnicalWithdrawal: false, viewGeneralHistory: true, managePermissions: false, deleteRecords: false });
+              setPermissions({ viewDashboard: true, registerWithdrawal: true, accessAnalystPanel: false, confirmTechnicalWithdrawal: false, viewGeneralHistory: true, managePermissions: false, deleteRecords: false, importData: false });
               setLoading(false);
             }
           }, (error) => {

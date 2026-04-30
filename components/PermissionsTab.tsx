@@ -32,9 +32,9 @@ export default function PermissionsTab() {
       return (config.permissions as any)[permKey] || false;
     }
     const defaults: any = {
-      TECHNICIAN: { viewDashboard: true, registerWithdrawal: true, accessAnalystPanel: false, confirmTechnicalWithdrawal: false, viewGeneralHistory: true, managePermissions: false, deleteRecords: false },
-      ANALYST: { viewDashboard: true, registerWithdrawal: true, accessAnalystPanel: true, confirmTechnicalWithdrawal: true, viewGeneralHistory: true, managePermissions: false, deleteRecords: false },
-      ADMIN: { viewDashboard: true, registerWithdrawal: true, accessAnalystPanel: true, confirmTechnicalWithdrawal: true, viewGeneralHistory: true, managePermissions: true, deleteRecords: true }
+      TECHNICIAN: { viewDashboard: true, registerWithdrawal: true, accessAnalystPanel: false, confirmTechnicalWithdrawal: false, viewGeneralHistory: true, managePermissions: false, deleteRecords: false, importData: false },
+      ANALYST: { viewDashboard: true, registerWithdrawal: true, accessAnalystPanel: true, confirmTechnicalWithdrawal: true, viewGeneralHistory: true, managePermissions: false, deleteRecords: false, importData: true },
+      ADMIN: { viewDashboard: true, registerWithdrawal: true, accessAnalystPanel: true, confirmTechnicalWithdrawal: true, viewGeneralHistory: true, managePermissions: true, deleteRecords: true, importData: true }
     };
     return defaults[roleName]?.[permKey] || false;
   };
@@ -60,6 +60,7 @@ export default function PermissionsTab() {
     { key: 'managePermissions', label: 'PERMISSÕES' },
     { key: 'confirmTechnicalWithdrawal', label: 'EFETUAR BAIXA TÉCNICA' },
     { key: 'deleteRecords', label: 'PRIVILÉGIO DE EXCLUSÃO' },
+    { key: 'importData', label: 'IMPORTAÇÃO DE DADOS (CSV)' },
   ];
 
   return (

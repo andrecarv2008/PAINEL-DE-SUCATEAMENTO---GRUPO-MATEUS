@@ -1,11 +1,11 @@
 'use client';
 
-import { History, LayoutDashboard, ClipboardList, ChevronRight, LogOut, ShieldAlert } from 'lucide-react';
+import { History, LayoutDashboard, ClipboardList, ChevronRight, LogOut, ShieldAlert, FileInput } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'motion/react';
 import { useAuth } from '@/hooks/useAuth';
 
-export type TabType = 'registration' | 'dashboard' | 'history' | 'analyst' | 'permissions';
+export type TabType = 'registration' | 'dashboard' | 'history' | 'analyst' | 'permissions' | 'import';
 
 interface SidebarProps {
   activeTab: TabType;
@@ -21,6 +21,7 @@ export default function Sidebar({ activeTab, onTabChange, permissions }: Sidebar
     { id: 'registration' as const, label: 'Registro de Sucateamento', icon: ClipboardList, perm: 'registerWithdrawal' },
     { id: 'analyst' as const, label: 'Painel Analista', icon: History, perm: 'accessAnalystPanel' },
     { id: 'history' as const, label: 'Histórico Geral', icon: History, perm: 'viewGeneralHistory' },
+    { id: 'import' as const, label: 'Importação', icon: FileInput, perm: 'importData' },
     { id: 'permissions' as const, label: 'Permissões', icon: ShieldAlert, perm: 'managePermissions' },
   ];
 

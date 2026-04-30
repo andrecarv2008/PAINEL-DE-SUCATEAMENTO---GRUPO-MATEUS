@@ -1,1 +1,25 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+/* Explicitly support dark class strategy in Tailwind v4 */
+@variant dark (&:where(.dark, .dark *));
+
+/* Base styles for smooth transitions */
+@layer base {
+  body {
+    @apply transition-colors duration-300;
+  }
+}
+
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
