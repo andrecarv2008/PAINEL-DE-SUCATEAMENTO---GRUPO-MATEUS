@@ -11,11 +11,11 @@ import ImportTab from '@/components/ImportTab';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRegistrations } from '@/lib/firestore-service';
 import { useAuth } from '@/hooks/useAuth';
-import { Terminal, ShieldCheck, LogIn, Mail, Lock, UserPlus, AlertCircle, Loader2 } from 'lucide-react';
+import { Terminal, ShieldCheck, LogIn, User, Lock, UserPlus, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
-  const { user, role, warehouse, permissions, loading: authLoading, loginWithGoogle, loginWithEmail, registerWithEmail } = useAuth();
+  const { user, role, warehouse, permissions, loading: authLoading, loginWithGoogle, loginWithUsername, registerWithUsername } = useAuth();
   const { registrations, addRegistration, confirmRegistration, deleteRegistration } = useRegistrations(warehouse);
 
   const handleNewRegistration = async (data: any) => {
@@ -23,7 +23,7 @@ export default function Page() {
   };
 
   const [isRegistering, setIsRegistering] = useState(false);
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,15 +34,14 @@ export default function Page() {
     setIsSubmitting(true);
     try {
       if (isRegistering) {
-        await registerWithEmail(email, password);
+        await registerWithUsername(username, password);
       } else {
-        await loginWithEmail(email, password);
+        await loginWithUsername(username, password);
       }
     } catch (err: any) {
-      if (err.code === 'auth/user-not-found') setAuthError('Usuário não encontrado.');
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') setAuthError('Usuário ou senha incorretos.');
       else if (err.code === 'auth/wrong-password') setAuthError('Senha incorreta.');
-      else if (err.code === 'auth/email-already-in-use') setAuthError('Este e-mail já está em uso.');
-      else if (err.code === 'auth/invalid-email') setAuthError('E-mail inválido.');
+      else if (err.code === 'auth/email-already-in-use') setAuthError('Este usuário já está em uso.');
       else if (err.code === 'auth/weak-password') setAuthError('A senha deve ter pelo menos 6 caracteres.');
       else setAuthError('Erro ao processar autenticação.');
     } finally {
@@ -92,13 +91,13 @@ export default function Page() {
           <form onSubmit={handleAuth} className="space-y-4 mb-8">
             <div className="space-y-4">
               <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-sky-500 transition-colors" />
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-sky-500 transition-colors" />
                 <input 
-                  type="email" 
-                  placeholder="E-MAIL"
+                  type="text" 
+                  placeholder="NOME DE USUÁRIO"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.05] rounded-2xl py-4 pl-12 pr-4 text-[10px] font-black text-slate-950 dark:text-white uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all"
                 />
               </div>

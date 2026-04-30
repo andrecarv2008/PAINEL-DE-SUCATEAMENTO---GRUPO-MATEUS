@@ -108,20 +108,22 @@ export function useAuth() {
     }
   };
 
-  const loginWithEmail = async (email: string, pass: string) => {
+  const loginWithUsername = async (username: string, pass: string) => {
+    const internalEmail = username.includes('@') ? username : `${username.trim().toLowerCase()}@ativoterminal.app`;
     try {
-      await signInWithEmailAndPassword(auth, email, pass);
+      await signInWithEmailAndPassword(auth, internalEmail, pass);
     } catch (error: any) {
-      console.error("Error signing in with Email:", error);
+      console.error("Error signing in with Username:", error);
       throw error;
     }
   };
 
-  const registerWithEmail = async (email: string, pass: string) => {
+  const registerWithUsername = async (username: string, pass: string) => {
+    const internalEmail = `${username.trim().toLowerCase()}@ativoterminal.app`;
     try {
-      await createUserWithEmailAndPassword(auth, email, pass);
+      await createUserWithEmailAndPassword(auth, internalEmail, pass);
     } catch (error: any) {
-      console.error("Error registering with Email:", error);
+      console.error("Error registering with Username:", error);
       throw error;
     }
   };
@@ -134,5 +136,5 @@ export function useAuth() {
     }
   };
 
-  return { user, role, warehouse, permissions, loading, loginWithGoogle, loginWithEmail, registerWithEmail, logout };
+  return { user, role, warehouse, permissions, loading, loginWithGoogle, loginWithUsername, registerWithUsername, logout };
 }
