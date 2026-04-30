@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Truck, MapPin, AlertCircle, User as UserIcon, Clock, CheckCircle2, ClipboardIcon, FileText, Upload, X, ArrowUpRight, Archive, History, ShieldCheck, Building2 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useMemo } from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
@@ -69,6 +69,8 @@ export default function RegistrationTab({ onSuccess, onTabChange }: Registration
     }
   }, [userWarehouse]);
 
+  const [isSuccessNotification, setIsSuccessNotification] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [fileData, setFileData] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -91,23 +93,52 @@ export default function RegistrationTab({ onSuccess, onTabChange }: Registration
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSuccess({
-      ...formData,
-      date: new Date().toLocaleDateString('pt-BR'),
-      time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      attachment: attachedFile ? attachedFile.name : null,
-      attachmentData: fileData,
-    });
-    setIsSuccess(true);
+    setIsSubmitting(true);
+    try {
+      await onSuccess({
+        ...formData,
+        date: new Date().toLocaleDateString('pt-BR'),
+        time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        attachment: attachedFile ? attachedFile.name : null,
+        attachmentData: fileData,
+      });
+      
+      // Auto-reset form for next entry
+      setIsSuccessNotification(true);
+      
+      // Reset form fields but keep warehouse if it's the fixed one
+      setFormData(prev => ({
+        plate: '',
+        warehouse: userWarehouse || '',
+        reason: '',
+        technician: prev.technician, // Keep technician name for convenience
+        dot: '',
+        tireFogo: '',
+        lifeCycle: '',
+        removalDate: '',
+      }));
+      setAttachedFile(null);
+      setFileData(null);
+      setPlateTouched(false);
+      
+      // Clear notification after 5 seconds
+      setTimeout(() => setIsSuccessNotification(false), 5000);
+    } catch (error) {
+      console.error('Submission error:', error);
+      alert('Erro ao transmitir dados. Por favor tente novamente.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleNewRegistration = () => {
-    setFormData({ plate: '', warehouse: '', reason: '', technician: '', dot: '', tireFogo: '', lifeCycle: '', removalDate: '' });
+    setFormData({ plate: '', warehouse: userWarehouse || '', reason: '', technician: '', dot: '', tireFogo: '', lifeCycle: '', removalDate: '' });
     setAttachedFile(null);
     setFileData(null);
     setIsSuccess(false);
+    setIsSuccessNotification(false);
   };
   if (isSuccess) {
     return (
@@ -193,6 +224,30 @@ export default function RegistrationTab({ onSuccess, onTabChange }: Registration
       animate={{ opacity: 1, y: 0 }}
       className="max-w-7xl mx-auto space-y-12 pb-12"
     >
+      <AnimatePresence>
+        {isSuccessNotification && (
+          <motion.div 
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] w-full max-w-md px-4"
+          >
+            <div className="bg-green-600 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-4 border border-green-500/50 backdrop-blur-md">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs font-black uppercase tracking-widest">Sucesso na Transmissão</p>
+                <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest mt-1 text-green-50">Dados injetados com sucesso. Formulário limpo.</p>
+              </div>
+              <button onClick={() => setIsSuccessNotification(false)} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-slate-200 dark:border-white/[0.05] pb-10">
         <div>
           <h2 className="text-4xl font-black text-slate-950 dark:text-white tracking-widest uppercase italic leading-none">
@@ -445,12 +500,16 @@ export default function RegistrationTab({ onSuccess, onTabChange }: Registration
 
                 <button 
                   type="submit"
-                  disabled={plateError}
-                  className={`group relative px-16 py-5 ${plateError ? 'bg-slate-300 dark:bg-slate-800 cursor-not-allowed border-slate-200' : 'bg-slate-950 dark:bg-sky-600 border-slate-800 dark:border-sky-700 hover:bg-slate-900 dark:hover:bg-sky-500 hover:translate-y-[-2px]'} text-white font-black text-xs uppercase tracking-[0.4em] rounded-2xl transition-all shadow-2xl ${!plateError && 'hover:shadow-slate-900/20 dark:hover:shadow-sky-600/20'} active:scale-95 flex items-center gap-4 border-b-4`}
+                  disabled={plateError || isSubmitting}
+                  className={`group relative px-16 py-5 ${plateError || isSubmitting ? 'bg-slate-300 dark:bg-slate-800 cursor-not-allowed border-slate-200' : 'bg-slate-950 dark:bg-sky-600 border-slate-800 dark:border-sky-700 hover:bg-slate-900 dark:hover:bg-sky-500 hover:translate-y-[-2px]'} text-white font-black text-xs uppercase tracking-[0.4em] rounded-2xl transition-all shadow-2xl ${!plateError && !isSubmitting && 'hover:shadow-slate-900/20 dark:hover:shadow-sky-600/20'} active:scale-95 flex items-center gap-4 border-b-4`}
                 >
-                  <ShieldCheck className="w-5 h-5" />
-                  Transmitir Dados
-                  {!plateError && <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />}
+                  {isSubmitting ? (
+                    <Clock className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <ShieldCheck className="w-5 h-5" />
+                  )}
+                  {isSubmitting ? 'Transmitindo...' : 'Transmitir Dados'}
+                  {!plateError && !isSubmitting && <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />}
                 </button>
               </div>
             </form>

@@ -20,7 +20,7 @@ export default function Page() {
 
   const handleNewRegistration = async (data: any) => {
     await addRegistration(data);
-    setActiveTab('analyst');
+    // Don't switch to analyst tab anymore, keep the user on the registration screen
   };
 
   if (authLoading) {
