@@ -6,7 +6,9 @@ import {
   GoogleAuthProvider, 
   onAuthStateChanged, 
   signOut,
-  User 
+  User,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword
 } from 'firebase/auth';
 import { auth, db } from '../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -100,8 +102,27 @@ export function useAuth() {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error signing in with Google:", error);
+      throw error;
+    }
+  };
+
+  const loginWithEmail = async (email: string, pass: string) => {
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+    } catch (error: any) {
+      console.error("Error signing in with Email:", error);
+      throw error;
+    }
+  };
+
+  const registerWithEmail = async (email: string, pass: string) => {
+    try {
+      await createUserWithEmailAndPassword(auth, email, pass);
+    } catch (error: any) {
+      console.error("Error registering with Email:", error);
+      throw error;
     }
   };
 
@@ -113,5 +134,5 @@ export function useAuth() {
     }
   };
 
-  return { user, role, warehouse, permissions, loading, loginWithGoogle, logout };
+  return { user, role, warehouse, permissions, loading, loginWithGoogle, loginWithEmail, registerWithEmail, logout };
 }

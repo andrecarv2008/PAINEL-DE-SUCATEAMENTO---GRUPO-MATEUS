@@ -11,16 +11,52 @@ import ImportTab from '@/components/ImportTab';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRegistrations } from '@/lib/firestore-service';
 import { useAuth } from '@/hooks/useAuth';
-import { Terminal, ShieldCheck, LogIn } from 'lucide-react';
+import { Terminal, ShieldCheck, LogIn, Mail, Lock, UserPlus, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
-  const { user, role, warehouse, permissions, loading: authLoading, loginWithGoogle } = useAuth();
+  const { user, role, warehouse, permissions, loading: authLoading, loginWithGoogle, loginWithEmail, registerWithEmail } = useAuth();
   const { registrations, addRegistration, confirmRegistration, deleteRegistration } = useRegistrations(warehouse);
 
   const handleNewRegistration = async (data: any) => {
     await addRegistration(data);
-    // Don't switch to analyst tab anymore, keep the user on the registration screen
+  };
+
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    setIsSubmitting(true);
+    try {
+      if (isRegistering) {
+        await registerWithEmail(email, password);
+      } else {
+        await loginWithEmail(email, password);
+      }
+    } catch (err: any) {
+      if (err.code === 'auth/user-not-found') setAuthError('Usuário não encontrado.');
+      else if (err.code === 'auth/wrong-password') setAuthError('Senha incorreta.');
+      else if (err.code === 'auth/email-already-in-use') setAuthError('Este e-mail já está em uso.');
+      else if (err.code === 'auth/invalid-email') setAuthError('E-mail inválido.');
+      else if (err.code === 'auth/weak-password') setAuthError('A senha deve ter pelo menos 6 caracteres.');
+      else setAuthError('Erro ao processar autenticação.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setAuthError(null);
+    try {
+      await loginWithGoogle();
+    } catch (err: any) {
+      setAuthError('Erro ao entrar com Google.');
+    }
   };
 
   if (authLoading) {
@@ -42,28 +78,104 @@ export default function Page() {
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.05] rounded-3xl p-10 shadow-2xl relative z-10 text-center"
+          className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.05] rounded-[2.5rem] p-10 shadow-2xl relative z-10"
         >
-          <div className="w-20 h-20 bg-sky-600 rounded-2xl flex items-center justify-center shadow-lg shadow-sky-600/20 mx-auto mb-8">
+          <div className="w-20 h-20 bg-sky-600 rounded-3xl flex items-center justify-center shadow-lg shadow-sky-600/20 mx-auto mb-6">
             <Terminal className="text-white w-12 h-12 stroke-[3]" />
           </div>
           
-          <h1 className="text-4xl font-black tracking-tighter text-slate-950 dark:text-white uppercase italic leading-none mb-2">
+          <h1 className="text-3xl font-black tracking-tighter text-slate-950 dark:text-white uppercase italic leading-none mb-1 text-center">
             Ativo<span className="text-sky-600">Terminal</span>
           </h1>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-10">Advanced Fleet Management</p>
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em] mb-10 text-center">Advanced Fleet Management</p>
           
-          <div className="space-y-4">
+          <form onSubmit={handleAuth} className="space-y-4 mb-8">
+            <div className="space-y-4">
+              <div className="relative group">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-sky-500 transition-colors" />
+                <input 
+                  type="email" 
+                  placeholder="E-MAIL"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.05] rounded-2xl py-4 pl-12 pr-4 text-[10px] font-black text-slate-950 dark:text-white uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all"
+                />
+              </div>
+              <div className="relative group">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-sky-500 transition-colors" />
+                <input 
+                  type="password" 
+                  placeholder="SENHA"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.05] rounded-2xl py-4 pl-12 pr-4 text-[10px] font-black text-slate-950 dark:text-white uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all"
+                />
+              </div>
+            </div>
+
+            <AnimatePresence>
+              {authError && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 p-3 rounded-xl flex items-center gap-3"
+                >
+                  <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                  <span className="text-[9px] font-black uppercase text-red-600 dark:text-red-400 tracking-widest">{authError}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <button 
-              onClick={loginWithGoogle}
-              className="w-full flex items-center justify-center gap-4 bg-slate-900 dark:bg-white text-white dark:text-slate-950 font-black py-4 rounded-xl hover:bg-slate-800 dark:hover:bg-slate-200 transition-all active:scale-95 text-sm uppercase tracking-widest shadow-xl"
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full flex items-center justify-center gap-3 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-sky-600/20 active:scale-95 text-[10px] uppercase tracking-[0.2em] border-b-4 border-sky-700"
             >
-              <LogIn className="w-5 h-5" />
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
+              ) : isRegistering ? (
+                <UserPlus className="w-4 h-4" />
+              ) : (
+                <LogIn className="w-4 h-4" />
+              )}
+              {isRegistering ? 'Criar Nova Conta' : 'Entrar no Sistema'}
+            </button>
+          </form>
+
+          <div className="relative mb-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-100 dark:border-white/[0.05]"></div>
+            </div>
+            <div className="relative flex justify-center text-[8px] font-black uppercase tracking-[0.3em] text-slate-400 bg-white dark:bg-slate-900 px-4">
+              Ou continuar com
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <button 
+              onClick={handleGoogleLogin}
+              className="w-full flex items-center justify-center gap-4 bg-slate-100 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.05] text-slate-900 dark:text-white font-black py-4 rounded-xl hover:bg-slate-200 dark:hover:bg-white/[0.1] transition-all active:scale-95 text-[10px] uppercase tracking-widest"
+            >
+              <LogIn className="w-4 h-4" />
               Acessar com Google
             </button>
-            <div className="flex items-center justify-center gap-2 text-slate-400 dark:text-slate-500">
+
+            <button 
+              onClick={() => {
+                setIsRegistering(!isRegistering);
+                setAuthError(null);
+              }}
+              className="w-full text-center text-[10px] font-black text-slate-400 hover:text-sky-500 uppercase tracking-widest transition-colors"
+            >
+              {isRegistering ? 'Já possui uma conta? Entrar' : 'Novo por aqui? Criar conta'}
+            </button>
+
+            <div className="flex items-center justify-center gap-2 text-slate-300 dark:text-slate-700">
               <ShieldCheck className="w-4 h-4" />
-              <span className="text-[10px] font-bold uppercase tracking-widest">Acesso Criptografado</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest">Protocolo de Segurança Ativo</span>
             </div>
           </div>
         </motion.div>
