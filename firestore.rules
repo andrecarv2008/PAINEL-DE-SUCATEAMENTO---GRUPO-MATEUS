@@ -83,7 +83,8 @@ service cloud.firestore {
 
     match /userRoles/{email} {
       allow read: if isSignedIn();
-      allow write: if isAdmin() || hasPermission('managePermissions');
+      allow create: if isSignedIn() && request.auth.token.email == email && request.resource.data.role == 'TECHNICIAN';
+      allow update, delete: if isAdmin() || hasPermission('managePermissions');
     }
 
     match /rolePermissions/{role} {

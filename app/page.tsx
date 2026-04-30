@@ -11,53 +11,50 @@ import ImportTab from '@/components/ImportTab';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRegistrations } from '@/lib/firestore-service';
 import { useAuth } from '@/hooks/useAuth';
-import { Terminal, ShieldCheck, LogIn, User, Lock, UserPlus, AlertCircle, Loader2 } from 'lucide-react';
+import { Terminal, ShieldCheck, LogIn, Mail, Lock, User as UserIcon, ArrowRight, Github } from 'lucide-react';
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
-  const { user, role, warehouse, permissions, loading: authLoading, loginWithGoogle, loginWithUsername, registerWithUsername } = useAuth();
-  const { registrations, addRegistration, confirmRegistration, deleteRegistration } = useRegistrations(warehouse);
-
-  const handleNewRegistration = async (data: any) => {
-    await addRegistration(data);
-  };
-
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [username, setUsername] = useState('');
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [name, setName] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [authSubmitting, setAuthSubmitting] = useState(false);
+
+  const { user, role, warehouse, permissions, loading: authLoading, loginWithGoogle, loginWithEmail, signupWithEmail } = useAuth();
+  const { registrations, addRegistration, confirmRegistration, deleteRegistration } = useRegistrations(warehouse);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    setAuthError(null);
-    setIsSubmitting(true);
+    setError(null);
+    setAuthSubmitting(true);
     try {
-      if (isRegistering) {
-        await registerWithUsername(username, password);
+      if (authMode === 'login') {
+        await loginWithEmail(email, password);
       } else {
-        await loginWithUsername(username, password);
+        if (!name) throw new Error('Nome é obrigatório');
+        await signupWithEmail(email, password, name);
       }
     } catch (err: any) {
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') setAuthError('Usuário ou senha incorretos.');
-      else if (err.code === 'auth/wrong-password') setAuthError('Senha incorreta.');
-      else if (err.code === 'auth/email-already-in-use') setAuthError('Este usuário já está em uso.');
-      else if (err.code === 'auth/invalid-email') setAuthError('Formato de usuário inválido.');
-      else if (err.code === 'auth/weak-password') setAuthError('A senha deve ter pelo menos 6 caracteres.');
-      else if (err.code === 'auth/operation-not-allowed') setAuthError('Erro: O login por usuário/senha não está habilitado. Ative "Email/Password" no console do Firebase.');
-      else setAuthError('Erro ao processar autenticação.');
+      console.error(err);
+      setError(err.message || 'Erro ao realizar autenticação');
     } finally {
-      setIsSubmitting(false);
+      setAuthSubmitting(false);
     }
   };
 
   const handleGoogleLogin = async () => {
-    setAuthError(null);
+    setError(null);
     try {
       await loginWithGoogle();
     } catch (err: any) {
-      setAuthError('Erro ao entrar com Google.');
+      setError(err.message || 'Erro ao entrar com Google');
     }
+  };
+
+  const handleNewRegistration = async (data: any) => {
+    await addRegistration(data);
   };
 
   if (authLoading) {
@@ -77,106 +74,135 @@ export default function Page() {
         </div>
 
         <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.05] rounded-[2.5rem] p-10 shadow-2xl relative z-10"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-[440px] w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.05] rounded-3xl p-8 md:p-10 shadow-2xl relative z-10"
         >
-          <div className="w-20 h-20 bg-sky-600 rounded-3xl flex items-center justify-center shadow-lg shadow-sky-600/20 mx-auto mb-6">
-            <Terminal className="text-white w-12 h-12 stroke-[3]" />
-          </div>
-          
-          <h1 className="text-3xl font-black tracking-tighter text-slate-950 dark:text-white uppercase italic leading-none mb-10 text-center">
-            PAINEL DE <span className="text-sky-600">SUCATEAMENTO</span>
-          </h1>
-          
-          <form onSubmit={handleAuth} className="space-y-4 mb-8">
-            <div className="space-y-4">
-              <div className="relative group">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-sky-500 transition-colors" />
-                <input 
-                  type="text" 
-                  placeholder="NOME DE USUÁRIO"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.05] rounded-2xl py-4 pl-12 pr-4 text-[10px] font-black text-slate-950 dark:text-white uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all"
-                />
-              </div>
-              <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-sky-500 transition-colors" />
-                <input 
-                  type="password" 
-                  placeholder="SENHA"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.05] rounded-2xl py-4 pl-12 pr-4 text-[10px] font-black text-slate-950 dark:text-white uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all"
-                />
-              </div>
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-sky-600 rounded-2xl flex items-center justify-center shadow-lg shadow-sky-600/20 mx-auto mb-6">
+              <Terminal className="text-white w-10 h-10 stroke-[3]" />
             </div>
+            
+            <h1 className="text-3xl font-black tracking-tighter text-slate-950 dark:text-white uppercase italic leading-none mb-1">
+              Ativo<span className="text-sky-600">Terminal</span>
+            </h1>
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em]">Advanced Fleet Management</p>
+          </div>
 
-            <AnimatePresence>
-              {authError && (
-                <motion.div 
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 p-3 rounded-xl flex items-center gap-3"
+          <form onSubmit={handleAuth} className="space-y-4">
+            <AnimatePresence mode="wait">
+              {authMode === 'signup' && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-1"
                 >
-                  <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
-                  <span className="text-[9px] font-black uppercase text-red-600 dark:text-red-400 tracking-widest">{authError}</span>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome Completo</label>
+                  <div className="relative group">
+                    <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-sky-600 transition-colors" />
+                    <input 
+                      type="text" 
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Seu nome"
+                      className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-sky-600/20 focus:border-sky-600 transition-all"
+                    />
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">E-mail</label>
+              <div className="relative group">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-sky-600 transition-colors" />
+                <input 
+                  type="email" 
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="usuario@grupomateus.com.br"
+                  className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-sky-600/20 focus:border-sky-600 transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Senha</label>
+              <div className="relative group">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-sky-600 transition-colors" />
+                <input 
+                  type="password" 
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-sky-600/20 focus:border-sky-600 transition-all"
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[10px] font-bold uppercase text-center">
+                {error}
+              </div>
+            )}
+
             <button 
               type="submit"
-              disabled={isSubmitting}
-              className="w-full flex items-center justify-center gap-3 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-sky-600/20 active:scale-95 text-[10px] uppercase tracking-[0.2em] border-b-4 border-sky-700"
+              disabled={authSubmitting}
+              className="w-full flex items-center justify-center gap-3 bg-sky-600 text-white font-black py-4 rounded-xl hover:bg-sky-500 transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 text-xs uppercase tracking-widest shadow-xl shadow-sky-600/20"
             >
-              {isSubmitting ? (
-                <Loader2 className="w-4 h-4 animate-spin text-white" />
-              ) : isRegistering ? (
-                <UserPlus className="w-4 h-4" />
+              {authSubmitting ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <LogIn className="w-4 h-4" />
+                <>
+                  {authMode === 'login' ? 'Entrar no Sistema' : 'Criar Conta Agora'}
+                  <ArrowRight className="w-4 h-4" />
+                </>
               )}
-              {isRegistering ? 'Criar Nova Conta' : 'Entrar no Sistema'}
             </button>
           </form>
 
-          <div className="relative mb-8">
+          <div className="relative my-8">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-100 dark:border-white/[0.05]"></div>
+              <div className="w-full border-t border-slate-200 dark:border-white/5"></div>
             </div>
-            <div className="relative flex justify-center text-[8px] font-black uppercase tracking-[0.3em] text-slate-400 bg-white dark:bg-slate-900 px-4">
-              Ou continuar com
+            <div className="relative flex justify-center text-[8px] font-black uppercase tracking-[0.2em]">
+              <span className="bg-white dark:bg-slate-900 px-4 text-slate-400">Ou continue com</span>
             </div>
           </div>
 
-          <div className="space-y-6">
-            <button 
-              onClick={handleGoogleLogin}
-              className="w-full flex items-center justify-center gap-4 bg-slate-100 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.05] text-slate-900 dark:text-white font-black py-4 rounded-xl hover:bg-slate-200 dark:hover:bg-white/[0.1] transition-all active:scale-95 text-[10px] uppercase tracking-widest"
-            >
-              <LogIn className="w-4 h-4" />
-              Acessar com Google
-            </button>
+          <button 
+            onClick={handleGoogleLogin}
+            className="w-full flex items-center justify-center gap-4 bg-slate-100 dark:bg-white/[0.03] border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white font-black py-4 rounded-xl hover:bg-slate-200 dark:hover:bg-white/[0.08] transition-all active:scale-95 text-[10px] uppercase tracking-widest"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+              <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+              <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+              <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+            </svg>
+            Entrar com Google
+          </button>
 
+          <div className="mt-8 text-center">
             <button 
               onClick={() => {
-                setIsRegistering(!isRegistering);
-                setAuthError(null);
+                setAuthMode(authMode === 'login' ? 'signup' : 'login');
+                setError(null);
               }}
-              className="w-full text-center text-[10px] font-black text-slate-400 hover:text-sky-500 uppercase tracking-widest transition-colors"
+              className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest hover:text-sky-600 dark:hover:text-sky-500 transition-colors"
             >
-              {isRegistering ? 'Já possui uma conta? Entrar' : 'Novo por aqui? Criar conta'}
+              {authMode === 'login' ? 'Não tem uma conta? Registre-se' : 'Já tem uma conta? Clique aqui'}
             </button>
+          </div>
 
-            <div className="flex items-center justify-center gap-2 text-slate-300 dark:text-slate-700">
-              <ShieldCheck className="w-4 h-4" />
-              <span className="text-[10px] font-bold uppercase tracking-widest">Protocolo de Segurança Ativo</span>
-            </div>
+          <div className="mt-10 flex items-center justify-center gap-2 text-slate-400 dark:text-slate-600">
+            <ShieldCheck className="w-3 h-3" />
+            <span className="text-[8px] font-bold uppercase tracking-[0.2em]">Criptografia de Ponta a Ponta</span>
           </div>
         </motion.div>
       </div>

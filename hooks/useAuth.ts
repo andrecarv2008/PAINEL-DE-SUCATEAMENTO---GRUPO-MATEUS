@@ -8,10 +8,12 @@ import {
   signOut,
   User,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword
+  createUserWithEmailAndPassword,
+  updateProfile,
+  sendEmailVerification
 } from 'firebase/auth';
 import { auth, db } from '../lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -102,29 +104,37 @@ export function useAuth() {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error signing in with Google:", error);
       throw error;
     }
   };
 
-  const loginWithUsername = async (username: string, pass: string) => {
-    // We encode the username to handle spaces and special chars, creating a valid internal email
-    const internalEmail = username.includes('@') ? username : `${username.trim().replace(/\s+/g, '.')}@ativoterminal.app`;
+  const loginWithEmail = async (email: string, pass: string) => {
     try {
-      await signInWithEmailAndPassword(auth, internalEmail, pass);
-    } catch (error: any) {
-      console.error("Error signing in with Username:", error);
+      await signInWithEmailAndPassword(auth, email, pass);
+    } catch (error) {
+      console.error("Error signing in with Email/Pass:", error);
       throw error;
     }
   };
 
-  const registerWithUsername = async (username: string, pass: string) => {
-    const internalEmail = `${username.trim().replace(/\s+/g, '.')}@ativoterminal.app`;
+  const signupWithEmail = async (email: string, pass: string, name: string) => {
     try {
-      await createUserWithEmailAndPassword(auth, internalEmail, pass);
-    } catch (error: any) {
-      console.error("Error registering with Username:", error);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+      await updateProfile(userCredential.user, { displayName: name });
+      
+      // Initialize basic user metadata if needed
+      await setDoc(doc(db, 'userRoles', email), {
+        role: 'TECHNICIAN',
+        warehouse: null,
+        displayName: name,
+        createdAt: new Date().toISOString()
+      }, { merge: true });
+
+      return userCredential.user;
+    } catch (error) {
+      console.error("Error signing up with Email/Pass:", error);
       throw error;
     }
   };
@@ -137,5 +147,5 @@ export function useAuth() {
     }
   };
 
-  return { user, role, warehouse, permissions, loading, loginWithGoogle, loginWithUsername, registerWithUsername, logout };
+  return { user, role, warehouse, permissions, loading, loginWithGoogle, loginWithEmail, signupWithEmail, logout };
 }

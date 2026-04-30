@@ -70,8 +70,6 @@ export interface Registration {
   time: string;
   attachment?: string | null;
   attachmentData?: string | null;
-  attachmentBorracharia?: string | null;
-  attachmentDataBorracharia?: string | null;
   status: 'pending' | 'confirmed';
   createdAt?: any;
 }
@@ -81,10 +79,6 @@ export function useUserRoles() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!auth.currentUser) {
-      setTimeout(() => setLoading(false), 0);
-      return;
-    }
     const unsubscribe = onSnapshot(collection(db, 'userRoles'), (snapshot) => {
       setRoles(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserRole)));
       setLoading(false);
@@ -141,10 +135,6 @@ export function useRolePermissions() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!auth.currentUser) {
-      setTimeout(() => setLoading(false), 0);
-      return;
-    }
     const unsubscribe = onSnapshot(collection(db, 'rolePermissions'), (snapshot) => {
       setRoleConfigs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RolePermissions)));
       setLoading(false);
@@ -194,10 +184,6 @@ export function useRegistrations(filterWarehouse: string | null = null) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!auth.currentUser) {
-      setTimeout(() => setLoading(false), 0);
-      return;
-    }
     let q = query(collection(db, 'registrations'), orderBy('createdAt', 'desc'));
     
     if (filterWarehouse) {

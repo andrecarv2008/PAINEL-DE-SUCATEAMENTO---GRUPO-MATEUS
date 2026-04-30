@@ -17,8 +17,6 @@
         "time": { "type": "string", "description": "Registration time (string)" },
         "attachment": { "type": "string", "description": "Attachment filename" },
         "attachmentData": { "type": "string", "description": "Base64 PDF data" },
-        "attachmentBorracharia": { "type": "string", "description": "Borracharia attachment filename" },
-        "attachmentDataBorracharia": { "type": "string", "description": "Borracharia Base64 PDF data" },
         "status": { "type": "string", "enum": ["pending", "confirmed"], "description": "Current status of the scraping process" },
         "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp" }
       },
