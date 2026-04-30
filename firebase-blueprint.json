@@ -1,0 +1,72 @@
+{
+  "entities": {
+    "Registration": {
+      "title": "Registration",
+      "description": "A vehicle fleet withdrawal registration",
+      "type": "object",
+      "properties": {
+        "plate": { "type": "string", "description": "Vehicle plate" },
+        "warehouse": { "type": "string", "description": "Distribution center" },
+        "reason": { "type": "string", "description": "Reason for withdrawal" },
+        "technician": { "type": "string", "description": "Technician name" },
+        "dot": { "type": "string", "description": "Tire DOT code" },
+        "tireFogo": { "type": "string", "description": "Tire serial number (Fogo)" },
+        "lifeCycle": { "type": "string", "description": "Number of life cycles" },
+        "removalDate": { "type": "string", "description": "Date the tire was removed" },
+        "date": { "type": "string", "description": "Registration date (string)" },
+        "time": { "type": "string", "description": "Registration time (string)" },
+        "attachment": { "type": "string", "description": "Attachment filename" },
+        "attachmentData": { "type": "string", "description": "Base64 PDF data" },
+        "status": { "type": "string", "enum": ["pending", "confirmed"], "description": "Current status of the scraping process" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp" }
+      },
+      "required": ["plate", "warehouse", "reason", "technician", "dot", "tireFogo", "lifeCycle", "status", "createdAt"]
+    },
+    "UserRole": {
+      "title": "User Role",
+      "description": "User permission levels and scope",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "description": "User email" },
+        "role": { "type": "string", "enum": ["ADMIN", "ANALYST", "TECHNICIAN"], "description": "User role" },
+        "warehouse": { "type": "string", "description": "Assigned branch/warehouse (null for all access)" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update" }
+      },
+      "required": ["email", "role", "updatedAt"]
+    },
+    "RolePermission": {
+      "title": "Role Permission",
+      "description": "Granular permissions for a specific role",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string", "description": "Role name" },
+        "permissions": {
+          "type": "object",
+          "properties": {
+            "viewDashboard": { "type": "boolean" },
+            "registerWithdrawal": { "type": "boolean" },
+            "accessAnalystPanel": { "type": "boolean" },
+            "confirmTechnicalWithdrawal": { "type": "boolean" },
+            "viewGeneralHistory": { "type": "boolean" },
+            "managePermissions": { "type": "boolean" },
+            "deleteRecords": { "type": "boolean" }
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "registrations": {
+      "schema": "Registration",
+      "description": "Collection of all fleet withdrawal registrations"
+    },
+    "userRoles": {
+      "schema": "UserRole",
+      "description": "User permission mappings"
+    },
+    "rolePermissions": {
+      "schema": "RolePermission",
+      "description": "Dynamic role-based access control settings"
+    }
+  }
+}
