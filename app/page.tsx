@@ -42,7 +42,9 @@ export default function Page() {
       if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') setAuthError('Usuário ou senha incorretos.');
       else if (err.code === 'auth/wrong-password') setAuthError('Senha incorreta.');
       else if (err.code === 'auth/email-already-in-use') setAuthError('Este usuário já está em uso.');
+      else if (err.code === 'auth/invalid-email') setAuthError('Formato de usuário inválido.');
       else if (err.code === 'auth/weak-password') setAuthError('A senha deve ter pelo menos 6 caracteres.');
+      else if (err.code === 'auth/operation-not-allowed') setAuthError('Erro: O login por usuário/senha não está habilitado. Ative "Email/Password" no console do Firebase.');
       else setAuthError('Erro ao processar autenticação.');
     } finally {
       setIsSubmitting(false);

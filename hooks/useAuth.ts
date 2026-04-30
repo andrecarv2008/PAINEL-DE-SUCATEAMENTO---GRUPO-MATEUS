@@ -109,7 +109,8 @@ export function useAuth() {
   };
 
   const loginWithUsername = async (username: string, pass: string) => {
-    const internalEmail = username.includes('@') ? username : `${username.trim().toLowerCase()}@ativoterminal.app`;
+    const sanitized = username.trim().toLowerCase().replace(/\s+/g, '.').replace(/[^a-z0-9._-]/g, '');
+    const internalEmail = username.includes('@') ? username : `${sanitized}@ativoterminal.app`;
     try {
       await signInWithEmailAndPassword(auth, internalEmail, pass);
     } catch (error: any) {
@@ -119,7 +120,8 @@ export function useAuth() {
   };
 
   const registerWithUsername = async (username: string, pass: string) => {
-    const internalEmail = `${username.trim().toLowerCase()}@ativoterminal.app`;
+    const sanitized = username.trim().toLowerCase().replace(/\s+/g, '.').replace(/[^a-z0-9._-]/g, '');
+    const internalEmail = `${sanitized}@ativoterminal.app`;
     try {
       await createUserWithEmailAndPassword(auth, internalEmail, pass);
     } catch (error: any) {
