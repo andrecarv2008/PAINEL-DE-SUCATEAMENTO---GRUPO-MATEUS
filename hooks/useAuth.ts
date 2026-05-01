@@ -9,11 +9,10 @@ import {
   User,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  updateProfile,
-  sendEmailVerification
+  updateProfile
 } from 'firebase/auth';
 import { auth, db } from '../lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -35,56 +34,86 @@ export function useAuth() {
       if (unsubscribePerms) unsubscribePerms();
 
       if (user) {
-        if (user.email === ADMIN_EMAIL) {
-          setRole('ADMIN');
-          setWarehouse(null);
-          setPermissions({
-            viewDashboard: true,
-            registerWithdrawal: true,
-            accessAnalystPanel: true,
-            confirmTechnicalWithdrawal: true,
-            viewGeneralHistory: true,
-            managePermissions: true,
-            deleteRecords: true,
-            importData: true
-          });
+        const { onSnapshot, getDoc, setDoc } = await import('firebase/firestore');
+        const userEmail = user.email?.toLowerCase().trim() || '';
+        
+        if (!userEmail) {
           setLoading(false);
-        } else {
-          const { onSnapshot } = await import('firebase/firestore');
-          unsubscribeRole = onSnapshot(doc(db, 'userRoles', user.email || ''), (roleDoc) => {
-            if (roleDoc.exists()) {
-              const userRole = roleDoc.data().role as any;
-              const userWarehouse = roleDoc.data().warehouse || null;
-              setRole(userRole);
-              setWarehouse(userWarehouse);
-              
-              if (unsubscribePerms) unsubscribePerms();
-              unsubscribePerms = onSnapshot(doc(db, 'rolePermissions', userRole), (permDoc) => {
-                if (permDoc.exists()) {
-                  setPermissions(permDoc.data().permissions);
-                } else {
-                  // Fallback defaults
-                  const defaults: any = {
-                    TECHNICIAN: { viewDashboard: true, registerWithdrawal: true, accessAnalystPanel: false, confirmTechnicalWithdrawal: false, viewGeneralHistory: true, managePermissions: false, deleteRecords: false, importData: false },
-                    ANALYST: { viewDashboard: true, registerWithdrawal: true, accessAnalystPanel: true, confirmTechnicalWithdrawal: true, viewGeneralHistory: true, managePermissions: false, deleteRecords: false, importData: true }
-                  };
-                  setPermissions(defaults[userRole] || null);
-                }
-                setLoading(false);
+          return;
+        }
+        
+        // Auto-initialize user role if it doesn't exist
+        const checkAndInitRole = async () => {
+          try {
+            const roleDocRef = doc(db, 'userRoles', userEmail);
+            const roleDocSnap = await getDoc(roleDocRef);
+            
+            if (!roleDocSnap.exists()) {
+              await setDoc(roleDocRef, {
+                email: userEmail,
+                role: userEmail === ADMIN_EMAIL ? 'ADMIN' : 'TECHNICIAN',
+                warehouse: null,
+                displayName: user.displayName || userEmail.split('@')[0],
+                createdAt: serverTimestamp()
+              }, { merge: true });
+            }
+          } catch (error) {
+            console.error("Error initializing user role:", error);
+          }
+        };
+
+        checkAndInitRole();
+
+        unsubscribeRole = onSnapshot(doc(db, 'userRoles', userEmail), (roleDoc) => {
+          if (roleDoc.exists()) {
+            const userRole = roleDoc.data().role as any;
+            const userWarehouse = roleDoc.data().warehouse || null;
+            setRole(userRole);
+            setWarehouse(userWarehouse);
+            
+            if (unsubscribePerms) unsubscribePerms();
+            unsubscribePerms = onSnapshot(doc(db, 'rolePermissions', userRole), (permDoc) => {
+              if (permDoc.exists()) {
+                setPermissions(permDoc.data().permissions);
+              } else {
+                // Fallback defaults
+                const defaults: any = {
+                  TECHNICIAN: { viewDashboard: true, registerWithdrawal: true, accessAnalystPanel: false, confirmTechnicalWithdrawal: false, viewGeneralHistory: true, managePermissions: false, deleteRecords: false, importData: false },
+                  ANALYST: { viewDashboard: true, registerWithdrawal: true, accessAnalystPanel: true, confirmTechnicalWithdrawal: true, viewGeneralHistory: true, managePermissions: false, deleteRecords: false, importData: true },
+                  ADMIN: { viewDashboard: true, registerWithdrawal: true, accessAnalystPanel: true, confirmTechnicalWithdrawal: true, viewGeneralHistory: true, managePermissions: true, deleteRecords: true, importData: true }
+                };
+                setPermissions(defaults[userRole] || null);
+              }
+              setLoading(false);
+            });
+          } else {
+            // Hardcoded Admin fallback if doc creation is pending or fails
+            if (userEmail === ADMIN_EMAIL) {
+              setRole('ADMIN');
+              setWarehouse(null);
+              setPermissions({
+                viewDashboard: true,
+                registerWithdrawal: true,
+                accessAnalystPanel: true,
+                confirmTechnicalWithdrawal: true,
+                viewGeneralHistory: true,
+                managePermissions: true,
+                deleteRecords: true,
+                importData: true
               });
             } else {
               setRole('TECHNICIAN');
               setWarehouse(null);
               setPermissions({ viewDashboard: true, registerWithdrawal: true, accessAnalystPanel: false, confirmTechnicalWithdrawal: false, viewGeneralHistory: true, managePermissions: false, deleteRecords: false, importData: false });
-              setLoading(false);
             }
-          }, (error) => {
-            console.error("Error fetching role:", error);
-            setRole('TECHNICIAN');
-            setWarehouse(null);
             setLoading(false);
-          });
-        }
+          }
+        }, (error) => {
+          console.error("Error fetching role:", error);
+          setRole('TECHNICIAN');
+          setWarehouse(null);
+          setLoading(false);
+        });
       } else {
         setRole(null);
         setWarehouse(null);
@@ -124,12 +153,13 @@ export function useAuth() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
       await updateProfile(userCredential.user, { displayName: name });
       
-      // Initialize basic user metadata if needed
-      await setDoc(doc(db, 'userRoles', email), {
+      // Initialize basic user metadata
+      await setDoc(doc(db, 'userRoles', email.toLowerCase().trim()), {
+        email: email.toLowerCase().trim(),
         role: 'TECHNICIAN',
         warehouse: null,
         displayName: name,
-        createdAt: new Date().toISOString()
+        createdAt: serverTimestamp()
       }, { merge: true });
 
       return userCredential.user;

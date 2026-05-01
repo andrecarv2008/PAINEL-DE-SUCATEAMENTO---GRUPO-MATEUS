@@ -11,7 +11,7 @@ import ImportTab from '@/components/ImportTab';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRegistrations } from '@/lib/firestore-service';
 import { useAuth } from '@/hooks/useAuth';
-import { Terminal, ShieldCheck, LogIn, Mail, Lock, User as UserIcon, ArrowRight, Github } from 'lucide-react';
+import { Terminal, ShieldCheck, LogIn, Mail, Lock, User as UserIcon, ArrowRight } from 'lucide-react';
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -55,6 +55,7 @@ export default function Page() {
 
   const handleNewRegistration = async (data: any) => {
     await addRegistration(data);
+    // Don't switch to analyst tab anymore, keep the user on the registration screen
   };
 
   if (authLoading) {
@@ -96,7 +97,7 @@ export default function Page() {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="space-y-1"
+                  className="space-y-1 overflow-hidden"
                 >
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome Completo</label>
                   <div className="relative group">
@@ -107,7 +108,7 @@ export default function Page() {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Seu nome"
-                      className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-sky-600/20 focus:border-sky-600 transition-all"
+                      className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-sky-600/20 focus:border-sky-600 transition-all text-slate-900 dark:text-white"
                     />
                   </div>
                 </motion.div>
@@ -124,7 +125,7 @@ export default function Page() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="usuario@grupomateus.com.br"
-                  className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-sky-600/20 focus:border-sky-600 transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-sky-600/20 focus:border-sky-600 transition-all text-slate-900 dark:text-white"
                 />
               </div>
             </div>
@@ -139,7 +140,7 @@ export default function Page() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-sky-600/20 focus:border-sky-600 transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-sky-600/20 focus:border-sky-600 transition-all text-slate-900 dark:text-white"
                 />
               </div>
             </div>

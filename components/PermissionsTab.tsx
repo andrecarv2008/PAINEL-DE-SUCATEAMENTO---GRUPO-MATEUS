@@ -233,7 +233,12 @@ export default function PermissionsTab() {
                           <div className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-white/[0.03] flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:text-sky-600 border border-slate-200 dark:border-white/[0.05] transition-all">
                             <Mail className="w-4 h-4" />
                           </div>
-                          <span className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 tracking-tight">{uRole.email}</span>
+                          <div className="flex flex-col">
+                            {uRole.displayName && (
+                              <span className="text-[10px] font-black uppercase text-slate-900 dark:text-white tracking-widest">{uRole.displayName}</span>
+                            )}
+                            <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 tracking-tight">{uRole.email}</span>
+                          </div>
                         </div>
                       </td>
                       <td className="px-8 py-6">
