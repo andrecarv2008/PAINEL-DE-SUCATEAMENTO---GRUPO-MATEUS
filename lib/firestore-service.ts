@@ -52,7 +52,6 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 export interface UserRole {
   id?: string;
   email: string;
-  displayName?: string;
   role: 'ADMIN' | 'ANALYST' | 'TECHNICIAN';
   warehouse?: string | null;
   updatedAt?: any;
@@ -81,14 +80,7 @@ export function useUserRoles() {
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'userRoles'), (snapshot) => {
-      setRoles(snapshot.docs.map(doc => {
-        const data = doc.data();
-        return { 
-          id: doc.id, 
-          email: data.email || doc.id,
-          ...data 
-        } as UserRole;
-      }));
+      setRoles(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserRole)));
       setLoading(false);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'userRoles');
