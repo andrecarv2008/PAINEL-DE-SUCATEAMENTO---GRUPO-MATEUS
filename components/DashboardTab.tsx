@@ -14,9 +14,11 @@ import {
   Pie,
   Cell
 } from 'recharts';
-import { useRegistrations } from '@/lib/firestore-service';
+import { useRegistrations, Registration } from '@/lib/firestore-service';
 import { useAuth } from '@/hooks/useAuth';
 import { useMemo, useState } from 'react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const COLORS = ['#0ea5e9', '#38bdf8', '#7dd3fc', '#0284c7', '#a855f7', '#d8b4fe'];
 
@@ -24,6 +26,7 @@ export default function DashboardTab() {
   const { warehouse: userWarehouse } = useAuth();
   const { registrations, loading } = useRegistrations(userWarehouse);
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const branches = useMemo(() => {
     const uniqueBranches = Array.from(new Set(registrations.map(r => r.warehouse))).filter(Boolean);
@@ -82,8 +85,71 @@ export default function DashboardTab() {
       value: value as number 
     })).sort((a, b) => b.value - a.value).slice(0, 5);
 
-    return { total, confirmedCount, pendingCount, byReason, byBranch, trend, branchChartData, reasonChartData, userChartData };
+    return { total, confirmedCount, pendingCount, byReason, byBranch, trend, branchChartData, reasonChartData, userChartData, filteredData: filtered };
   }, [registrations, selectedBranch]);
+
+  const handleDownloadReport = async () => {
+    if (statsData.total === 0) return;
+    setIsGenerating(true);
+    
+    try {
+      const doc = new jsPDF();
+      const timestamp = new Date().toLocaleString('pt-BR');
+      
+      // Header
+      doc.setFontSize(22);
+      doc.setTextColor(14, 165, 233); // sky-600
+      doc.text('LEDGER ANALÍTICO MENSAL', 14, 22);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Gerado em: ${timestamp}`, 14, 30);
+      doc.text(`Filtro: ${selectedBranch === 'all' ? 'GLOBAL' : selectedBranch}`, 14, 35);
+      
+      // Summary Stats
+      doc.setFontSize(14);
+      doc.setTextColor(0);
+      doc.text('RESUMO EXECUTIVO', 14, 50);
+      
+      doc.setFontSize(10);
+      const statsText = [
+        `Volume Total de Baixas: ${statsData.total}`,
+        `Protocolos Confirmados: ${statsData.confirmedCount}`,
+        `Pendências de Auditoria: ${statsData.pendingCount}`,
+        `Filiais Ativas: ${Object.keys(statsData.byBranch).length}`
+      ];
+      
+      statsText.forEach((text, i) => {
+        doc.text(text, 14, 60 + (i * 7));
+      });
+
+      // Data Table
+      const tableData = statsData.filteredData.map(r => [
+        r.date || '',
+        r.plate || '',
+        r.warehouse || '',
+        r.reason || '',
+        r.technician || '',
+        r.status === 'confirmed' ? 'CONFIRMADO' : 'PENDENTE'
+      ]);
+
+      autoTable(doc, {
+        startY: 95,
+        head: [['DATA', 'PLACA', 'FILIAL', 'MOTIVO', 'TÉCNICO', 'STATUS']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [14, 165, 233] },
+        styles: { fontSize: 8, font: 'helvetica' }
+      });
+
+      doc.save(`Relatorio_Executivo_${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+      alert("Houve um erro ao gerar o relatório.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const stats = [
     { 
@@ -463,9 +529,22 @@ export default function DashboardTab() {
              <h4 className="text-[10px] font-mono font-black text-sky-600 dark:text-sky-400 uppercase tracking-[0.4em] mb-4">Relatório Executivo</h4>
              <p className="text-xl font-bold text-slate-900 dark:text-white mb-2 leading-tight">Geração de Ledger Analítico Mensal</p>
              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest leading-relaxed mb-6 italic">Consolidado técnico de todas as baixas e laudos confirmados no período.</p>
-             <button className="px-8 py-3.5 bg-sky-600 text-white text-[10px] font-black uppercase tracking-[0.3em] rounded-xl hover:bg-sky-500 transition-all shadow-xl shadow-sky-600/10 active:scale-95 flex items-center gap-2">
-                Download PDF
-                <ArrowUpRight className="w-4 h-4" />
+             <button 
+               onClick={handleDownloadReport}
+               disabled={isGenerating || statsData.total === 0}
+               className="px-8 py-3.5 bg-sky-600 text-white text-[10px] font-black uppercase tracking-[0.3em] rounded-xl hover:bg-sky-500 transition-all shadow-xl shadow-sky-600/10 active:scale-95 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+             >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Gerando...
+                  </>
+                ) : (
+                  <>
+                    Download PDF
+                    <ArrowUpRight className="w-4 h-4" />
+                  </>
+                )}
              </button>
           </div>
           <div className="hidden lg:block relative">

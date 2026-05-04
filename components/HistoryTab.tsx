@@ -223,120 +223,12 @@ export default function HistoryTab({
                                <span>{processingId === record.id ? 'Processando...' : 'Confirmar'}</span>
                             </button>
                           )}
-                          {record.attachment && (
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (record.attachmentData) {
-                                  try {
-                                    if (record.attachmentData.startsWith('http')) {
-                                      window.open(record.attachmentData, '_blank');
-                                    } else {
-                                      const link = document.createElement('a');
-                                      link.href = record.attachmentData;
-                                      link.download = record.attachment || 'laudo.pdf';
-                                      link.click();
-                                    }
-                                  } catch (err) {
-                                    console.error("Download failed:", err);
-                                    alert("Falha ao abrir ou baixar o PDF.");
-                                  }
-                                } else {
-                                  alert('Este registro não possui dados de PDF persistidos.');
-                                }
-                              }}
-                              title="Download Laudo Técnico" 
-                              className="group/btn p-2.5 bg-sky-50 dark:bg-sky-500/10 border border-sky-100 dark:border-sky-500/20 rounded-lg text-sky-600 dark:text-sky-400 hover:bg-sky-600 dark:hover:bg-sky-500 hover:text-white transition-all"
-                            >
-                               <FileText className="w-4 h-4 transition-transform group-hover/btn:scale-110" />
-                            </button>
-                          )}
-                          {record.renovadoraAttachment && (
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (record.renovadoraData) {
-                                  try {
-                                    if (record.renovadoraData.startsWith('http')) {
-                                      window.open(record.renovadoraData, '_blank');
-                                    } else {
-                                      const link = document.createElement('a');
-                                      link.href = record.renovadoraData;
-                                      link.download = record.renovadoraAttachment || 'laudo_renovadora.pdf';
-                                      link.click();
-                                    }
-                                  } catch (err) {
-                                    console.error("Download failed:", err);
-                                    alert("Falha ao abrir ou baixar o PDF.");
-                                  }
-                                } else {
-                                  alert('Este registro não possui dados de PDF persistidos.');
-                                }
-                              }}
-                              title="Download Laudo Renovadora" 
-                              className="group/btn p-2.5 bg-purple-50 dark:bg-purple-500/10 border border-purple-100 dark:border-purple-500/20 rounded-lg text-purple-600 dark:text-purple-400 hover:bg-purple-600 dark:hover:bg-purple-500 hover:text-white transition-all"
-                            >
-                               <FileText className="w-4 h-4 transition-transform group-hover/btn:scale-110" />
-                            </button>
-                          )}
                           <button 
                             title="Ver Detalhes" 
                             className="p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/[0.05] rounded-lg text-slate-400 dark:text-slate-500 hover:border-sky-500/50 dark:hover:border-sky-500 hover:text-sky-600 transition-all group/eye shadow-sm"
                           >
                              <Eye className="w-4 h-4 transition-transform group-hover/eye:scale-110" />
                           </button>
-                          {canDelete && record.id && (
-                            <div className="flex items-center gap-2">
-                               {deletingId === record.id ? (
-                                  <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-lg animate-pulse shadow-sm">
-                                     <span className="text-[8px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest">Excluindo...</span>
-                                     <Loader2 className="w-3.5 h-3.5 text-red-600 animate-spin" />
-                                  </div>
-                               ) : confirmDeleteId === record.id ? (
-                                 <div className="flex items-center gap-2">
-                                   <button 
-                                      onClick={async (e) => {
-                                        e.stopPropagation();
-                                        if (!onDeleteAction) return;
-                                        try {
-                                          setDeletingId(record.id!);
-                                          await onDeleteAction(record.id!);
-                                          setConfirmDeleteId(null);
-                                        } catch (err) {
-                                          console.error("Deletion failed:", err);
-                                          // No alert, just log and reset
-                                        } finally {
-                                          setDeletingId(null);
-                                        }
-                                      }}
-                                      className="px-3 py-1.5 bg-red-600 text-white text-[9px] font-black uppercase rounded shadow-lg shadow-red-600/20 active:scale-95 transition-all"
-                                   >
-                                      Confirmar
-                                   </button>
-                                   <button 
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setConfirmDeleteId(null);
-                                      }}
-                                      className="px-3 py-1.5 bg-slate-100 dark:bg-white/[0.05] text-[9px] font-black uppercase text-slate-500 dark:text-slate-400 rounded hover:bg-slate-200 transition-all"
-                                   >
-                                      Cancelar
-                                   </button>
-                                 </div>
-                               ) : (
-                                 <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setConfirmDeleteId(record.id!);
-                                  }}
-                                  title="Excluir Registro" 
-                                  className="p-2.5 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-lg text-red-500 dark:text-red-400 hover:bg-red-500 hover:text-white transition-all group/trash shadow-sm active:scale-90"
-                                >
-                                   <Trash2 className="w-4 h-4 transition-transform group-hover/trash:scale-110" />
-                                </button>
-                               )}
-                            </div>
-                          )}
                           <button className="p-2 text-slate-300 dark:text-slate-600 hover:text-slate-900 dark:hover:text-white transition-colors">
                              <MoreVertical className="w-4 h-4" />
                           </button>
