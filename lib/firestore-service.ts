@@ -70,6 +70,8 @@ export interface Registration {
   time: string;
   attachment?: string | null;
   attachmentData?: string | null;
+  renovadoraAttachment?: string | null;
+  renovadoraData?: string | null;
   status: 'pending' | 'confirmed';
   createdAt?: any;
 }

@@ -14,6 +14,8 @@ interface HistoryItem {
   time: string;
   attachment?: string | null;
   attachmentData?: string | null;
+  renovadoraAttachment?: string | null;
+  renovadoraData?: string | null;
   status?: 'pending' | 'confirmed';
   dot: string;
   tireFogo: string;
@@ -239,8 +241,32 @@ export default function HistoryTab({
                                   alert('Este registro não possui dados de PDF persistidos.');
                                 }
                               }}
-                              title="Download Laudo PDF" 
+                              title="Download Laudo Técnico" 
                               className="group/btn p-2.5 bg-sky-50 dark:bg-sky-500/10 border border-sky-100 dark:border-sky-500/20 rounded-lg text-sky-600 dark:text-sky-400 hover:bg-sky-600 dark:hover:bg-sky-500 hover:text-white transition-all"
+                            >
+                               <FileText className="w-4 h-4 transition-transform group-hover/btn:scale-110" />
+                            </button>
+                          )}
+                          {record.renovadoraAttachment && (
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (record.renovadoraData) {
+                                  try {
+                                    const link = document.createElement('a');
+                                    link.href = record.renovadoraData;
+                                    link.download = record.renovadoraAttachment || 'laudo_renovadora.pdf';
+                                    link.click();
+                                  } catch (err) {
+                                    console.error("Download failed:", err);
+                                    alert("Falha ao gerar o download do PDF.");
+                                  }
+                                } else {
+                                  alert('Este registro não possui dados de PDF persistidos.');
+                                }
+                              }}
+                              title="Download Laudo Renovadora" 
+                              className="group/btn p-2.5 bg-purple-50 dark:bg-purple-500/10 border border-purple-100 dark:border-purple-500/20 rounded-lg text-purple-600 dark:text-purple-400 hover:bg-purple-600 dark:hover:bg-purple-500 hover:text-white transition-all"
                             >
                                <FileText className="w-4 h-4 transition-transform group-hover/btn:scale-110" />
                             </button>

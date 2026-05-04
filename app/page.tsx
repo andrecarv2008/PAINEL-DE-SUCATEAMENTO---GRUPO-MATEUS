@@ -11,7 +11,7 @@ import ImportTab from '@/components/ImportTab';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRegistrations } from '@/lib/firestore-service';
 import { useAuth } from '@/hooks/useAuth';
-import { Terminal, ShieldCheck, LogIn } from 'lucide-react';
+import { Terminal, ShieldCheck } from 'lucide-react';
 
 import AuthForm from '@/components/AuthForm';
 
@@ -35,7 +35,7 @@ export default function Page() {
 
   if (!user) {
     return (
-      <div className="bg-slate-50 dark:bg-[#020617] min-h-screen text-slate-900 dark:text-slate-100 selection:bg-sky-500 selection:text-white flex items-center justify-center p-6 relative overflow-hidden transition-colors duration-300">
+      <div className="bg-slate-50 dark:bg-[#020617] min-h-screen text-slate-900 dark:text-slate-100 selection:bg-sky-500 selection:text-white flex items-center justify-center p-6 md:p-12 md:py-20 relative overflow-hidden transition-colors duration-300">
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-sky-500/5 blur-[120px] rounded-full"></div>
           <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-sky-500/5 blur-[120px] rounded-full"></div>

@@ -38,11 +38,26 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
       }
       onSuccess?.();
     } catch (err: any) {
+      console.error("Auth error:", err);
       setError(err.message || 'Ocorreu um erro. Tente novamente.');
     } finally {
       setLoading(false);
     }
   };
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await loginWithGoogle();
+      onSuccess?.();
+    } catch (err: any) {
+      console.error("Google Auth error:", err);
+      setError('Erro ao entrar com Google. Verifique pop-ups ou tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="w-full max-w-sm mx-auto">
@@ -192,7 +207,8 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
 
       <button
         type="button"
-        onClick={() => loginWithGoogle()}
+        disabled={loading}
+        onClick={handleGoogleLogin}
         className="w-full flex items-center justify-center gap-4 bg-slate-100 dark:bg-slate-800/50 text-slate-900 dark:text-white font-black py-4 rounded-xl border border-slate-200 dark:border-white/[0.05] hover:bg-slate-200 dark:hover:bg-slate-800 transition-all active:scale-95 text-[10px] uppercase tracking-widest"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24">

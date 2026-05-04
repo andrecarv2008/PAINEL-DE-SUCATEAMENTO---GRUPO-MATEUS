@@ -71,19 +71,29 @@ export default function RegistrationTab({ onSuccess, onTabChange }: Registration
 
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [fileData, setFileData] = useState<string | null>(null);
+  
+  const [renovadoraFile, setRenovadoraFile] = useState<File | null>(null);
+  const [renovadoraData, setRenovadoraData] = useState<string | null>(null);
+
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'laudo' | 'renovadora') => {
     const file = e.target.files?.[0];
     if (file && file.type === 'application/pdf') {
        if (file.size > 800 * 1024) {
          alert('Arquivo muito grande. Limite de 800KB para persistência em nuvem.');
          return;
        }
-       setAttachedFile(file);
+       
        const reader = new FileReader();
        reader.onloadend = () => {
-         setFileData(reader.result as string);
+         if (type === 'laudo') {
+           setAttachedFile(file);
+           setFileData(reader.result as string);
+         } else {
+           setRenovadoraFile(file);
+           setRenovadoraData(reader.result as string);
+         }
        };
        reader.readAsDataURL(file);
     } else if (file) {
@@ -99,6 +109,8 @@ export default function RegistrationTab({ onSuccess, onTabChange }: Registration
       time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
       attachment: attachedFile ? attachedFile.name : null,
       attachmentData: fileData,
+      renovadoraAttachment: renovadoraFile ? renovadoraFile.name : null,
+      renovadoraData: renovadoraData,
     });
     setIsSuccess(true);
   };
@@ -107,6 +119,8 @@ export default function RegistrationTab({ onSuccess, onTabChange }: Registration
     setFormData({ plate: '', warehouse: '', reason: '', technician: '', dot: '', tireFogo: '', lifeCycle: '', removalDate: '' });
     setAttachedFile(null);
     setFileData(null);
+    setRenovadoraFile(null);
+    setRenovadoraData(null);
     setIsSuccess(false);
   };
   if (isSuccess) {
@@ -164,7 +178,21 @@ export default function RegistrationTab({ onSuccess, onTabChange }: Registration
                  className="px-8 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/[0.05] text-slate-600 dark:text-slate-400 font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-3 active:scale-95 shadow-sm"
                 >
                   <Upload className="w-4 h-4 rotate-180" />
-                  Download do Laudo
+                  Laudo Técnico
+                </button>
+             )}
+             {renovadoraData && (
+                <button 
+                 onClick={() => {
+                   const link = document.createElement('a');
+                   link.href = renovadoraData;
+                   link.download = renovadoraFile?.name || 'laudo_renovadora.pdf';
+                   link.click();
+                 }}
+                 className="px-8 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/[0.05] text-slate-600 dark:text-slate-400 font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-3 active:scale-95 shadow-sm"
+                >
+                  <Upload className="w-4 h-4 rotate-180" />
+                  Laudo Renovadora
                 </button>
              )}
              <button 
@@ -374,52 +402,75 @@ export default function RegistrationTab({ onSuccess, onTabChange }: Registration
                     </div>
                  </div>
 
-                 <div className="space-y-3">
-                    <label className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest px-1">Documentação Digital (Laudo PDF)</label>
-                    <div 
-                      className={`relative flex flex-col items-center justify-center bg-slate-50 dark:bg-white/[0.02] border-2 border-dashed rounded-3xl p-6 min-h-[160px] transition-all duration-500 group ${
-                        attachedFile ? 'border-sky-500/50 bg-sky-50 dark:bg-sky-500/10' : 'border-slate-200 dark:border-white/[0.1] hover:border-sky-300 dark:hover:border-sky-500/40'
-                      }`}
-                    >
-                      <input 
-                        type="file" 
-                        accept=".pdf" 
-                        onChange={handleFileChange}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                      />
-                      
-                      {!attachedFile ? (
-                        <div className="text-center pointer-events-none space-y-4">
-                          <div className="w-14 h-14 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto border border-slate-100 dark:border-white/[0.05] group-hover:scale-110 transition-transform shadow-sm">
-                             <Upload className="w-5 h-5 text-slate-400 group-hover:text-sky-600 transition-colors" />
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-[0.2em]">Injetar Arquivo PDF</p>
-                            <p className="text-[8px] text-slate-300 dark:text-slate-600 font-bold uppercase tracking-[0.3em] mt-1 italic">Drag & Drop Protocol Enabled</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-5 w-full bg-white dark:bg-slate-800 p-5 rounded-2xl border border-sky-100 dark:border-sky-500/20 shadow-xl relative z-20">
-                          <div className="w-12 h-12 bg-sky-50 dark:bg-sky-500/10 rounded-xl flex items-center justify-center border border-sky-100 dark:border-sky-500/20 text-sky-600 dark:text-sky-400">
-                            <FileText className="w-6 h-6" />
-                          </div>
-                          <div className="flex-1 overflow-hidden">
-                            <p className="text-[11px] font-mono font-bold text-slate-900 dark:text-white truncate uppercase tracking-tight">{attachedFile.name}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-[9px] font-mono font-bold text-sky-600/60 dark:text-sky-400/60">{(attachedFile.size / 1024 / 1024).toFixed(2)} MB</span>
-                              <div className="w-1 h-1 bg-slate-100 dark:bg-white/[0.05] rounded-full" />
-                              <span className="text-[9px] font-mono font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Digital Copy</span>
+                 <div className="space-y-6">
+                    <div className="space-y-3">
+                        <label className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest px-1">Documentação Digital (Laudo PDF)</label>
+                        <div 
+                          className={`relative flex flex-col items-center justify-center bg-slate-50 dark:bg-white/[0.02] border-2 border-dashed rounded-3xl p-4 min-h-[120px] transition-all duration-500 group ${
+                            attachedFile ? 'border-sky-500/50 bg-sky-50 dark:bg-sky-500/10' : 'border-slate-200 dark:border-white/[0.1] hover:border-sky-300 dark:hover:border-sky-500/40'
+                          }`}
+                        >
+                          <input 
+                            type="file" 
+                            accept=".pdf" 
+                            onChange={(e) => handleFileChange(e, 'laudo')}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                          />
+                          
+                          {!attachedFile ? (
+                            <div className="text-center pointer-events-none">
+                              <Upload className="w-5 h-5 text-slate-400 group-hover:text-sky-600 transition-colors mx-auto mb-2" />
+                              <p className="text-[9px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-[0.2em]">Injetar Laudo Técnico</p>
                             </div>
-                          </div>
-                          <button 
-                            type="button"
-                            onClick={(e) => { e.preventDefault(); setAttachedFile(null); }}
-                            className="p-2.5 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl text-slate-400 hover:text-red-500 transition-all"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
+                          ) : (
+                            <div className="flex items-center gap-3 w-full bg-white dark:bg-slate-800 p-3 rounded-xl border border-sky-100 dark:border-sky-500/20 relative z-20">
+                              <FileText className="w-5 h-5 text-sky-600 dark:text-sky-400 shrink-0" />
+                              <p className="text-[10px] font-mono font-bold text-slate-900 dark:text-white truncate uppercase flex-1">{attachedFile.name}</p>
+                              <button 
+                                type="button"
+                                onClick={(e) => { e.preventDefault(); setAttachedFile(null); }}
+                                className="p-1.5 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg text-slate-400 hover:text-red-500 transition-all"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
                         </div>
-                      )}
+                    </div>
+
+                    <div className="space-y-3">
+                        <label className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest px-1">Laudo da Renovadora (Opcional)</label>
+                        <div 
+                          className={`relative flex flex-col items-center justify-center bg-slate-50 dark:bg-white/[0.02] border-2 border-dashed rounded-3xl p-4 min-h-[120px] transition-all duration-500 group ${
+                            renovadoraFile ? 'border-purple-500/50 bg-purple-50 dark:bg-purple-500/10' : 'border-slate-200 dark:border-white/[0.1] hover:border-purple-300 dark:hover:border-purple-500/40'
+                          }`}
+                        >
+                          <input 
+                            type="file" 
+                            accept=".pdf" 
+                            onChange={(e) => handleFileChange(e, 'renovadora')}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                          />
+                          
+                          {!renovadoraFile ? (
+                            <div className="text-center pointer-events-none">
+                              <Upload className="w-5 h-5 text-slate-400 group-hover:text-purple-600 transition-colors mx-auto mb-2" />
+                              <p className="text-[9px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-[0.2em]">Injetar Laudo Renovadora</p>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-3 w-full bg-white dark:bg-slate-800 p-3 rounded-xl border border-purple-100 dark:border-purple-500/20 relative z-20">
+                              <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400 shrink-0" />
+                              <p className="text-[10px] font-mono font-bold text-slate-900 dark:text-white truncate uppercase flex-1">{renovadoraFile.name}</p>
+                              <button 
+                                type="button"
+                                onClick={(e) => { e.preventDefault(); setRenovadoraFile(null); }}
+                                className="p-1.5 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg text-slate-400 hover:text-red-500 transition-all"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
                     </div>
                  </div>
               </div>
