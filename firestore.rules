@@ -53,7 +53,8 @@ service cloud.firestore {
         && data.lifeCycle is string && data.lifeCycle.size() <= 20
         && data.removalDate is string && data.removalDate.size() <= 20
         && data.status in ['pending', 'confirmed']
-        && (data.createdAt == request.time || data.createdAt is timestamp);
+        && (data.createdAt == request.time || data.createdAt is timestamp)
+        && (!data.keys().contains('userEmail') || (data.userEmail is string && data.userEmail.size() <= 100));
     }
 
     match /registrations/{regId} {

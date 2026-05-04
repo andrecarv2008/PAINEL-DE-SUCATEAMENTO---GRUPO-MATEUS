@@ -229,13 +229,17 @@ export default function HistoryTab({
                                 e.stopPropagation();
                                 if (record.attachmentData) {
                                   try {
-                                    const link = document.createElement('a');
-                                    link.href = record.attachmentData;
-                                    link.download = record.attachment || 'documento.pdf';
-                                    link.click();
+                                    if (record.attachmentData.startsWith('http')) {
+                                      window.open(record.attachmentData, '_blank');
+                                    } else {
+                                      const link = document.createElement('a');
+                                      link.href = record.attachmentData;
+                                      link.download = record.attachment || 'laudo.pdf';
+                                      link.click();
+                                    }
                                   } catch (err) {
                                     console.error("Download failed:", err);
-                                    alert("Falha ao gerar o download do PDF.");
+                                    alert("Falha ao abrir ou baixar o PDF.");
                                   }
                                 } else {
                                   alert('Este registro não possui dados de PDF persistidos.');
@@ -253,13 +257,17 @@ export default function HistoryTab({
                                 e.stopPropagation();
                                 if (record.renovadoraData) {
                                   try {
-                                    const link = document.createElement('a');
-                                    link.href = record.renovadoraData;
-                                    link.download = record.renovadoraAttachment || 'laudo_renovadora.pdf';
-                                    link.click();
+                                    if (record.renovadoraData.startsWith('http')) {
+                                      window.open(record.renovadoraData, '_blank');
+                                    } else {
+                                      const link = document.createElement('a');
+                                      link.href = record.renovadoraData;
+                                      link.download = record.renovadoraAttachment || 'laudo_renovadora.pdf';
+                                      link.click();
+                                    }
                                   } catch (err) {
                                     console.error("Download failed:", err);
-                                    alert("Falha ao gerar o download do PDF.");
+                                    alert("Falha ao abrir ou baixar o PDF.");
                                   }
                                 } else {
                                   alert('Este registro não possui dados de PDF persistidos.');

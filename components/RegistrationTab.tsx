@@ -14,7 +14,7 @@ interface RegistrationFormProps {
 }
 
 export default function RegistrationTab({ onSuccess, onTabChange }: RegistrationFormProps) {
-  const { warehouse: userWarehouse } = useAuth();
+  const { user, warehouse: userWarehouse } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [sessionId] = useState(() => Math.random().toString(36).substr(2, 8).toUpperCase());
   const [formData, setFormData] = useState({
@@ -76,12 +76,13 @@ export default function RegistrationTab({ onSuccess, onTabChange }: Registration
   const [renovadoraData, setRenovadoraData] = useState<string | null>(null);
 
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'laudo' | 'renovadora') => {
     const file = e.target.files?.[0];
     if (file && file.type === 'application/pdf') {
-       if (file.size > 800 * 1024) {
-         alert('Arquivo muito grande. Limite de 800KB para persistência em nuvem.');
+       if (file.size > 3 * 1024 * 1024) {
+         alert('Arquivo muito grande. Limite de 3MB permitido.');
          return;
        }
        
@@ -97,23 +98,55 @@ export default function RegistrationTab({ onSuccess, onTabChange }: Registration
        };
        reader.readAsDataURL(file);
     } else if (file) {
-      alert('Por favor, selecione apenas arquivos PDF.');
+       alert('Por favor, selecione apenas arquivos PDF.');
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSuccess({
-      ...formData,
-      date: new Date().toLocaleDateString('pt-BR'),
-      time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      attachment: attachedFile ? attachedFile.name : null,
-      attachmentData: fileData,
-      renovadoraAttachment: renovadoraFile ? renovadoraFile.name : null,
-      renovadoraData: renovadoraData,
-    });
-    setIsSuccess(true);
+  const uploadFile = async (file: File, path: string): Promise<string> => {
+    const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+    const { storage } = await import('../lib/firebase');
+    const storageRef = ref(storage, `attachments/${Date.now()}_${path}_${file.name}`);
+    const snapshot = await uploadBytes(storageRef, file);
+    return await getDownloadURL(snapshot.ref);
   };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isUploading) return;
+    
+    setIsUploading(true);
+    try {
+      let finalLaudoURL = fileData;
+      let finalRenovadoraURL = renovadoraData;
+
+      // Upload to storage if files are large or to avoid Firestore limit
+      // Base64 encoding adds ~33% overhead, so a 800KB file becomes ~1.1MB
+      if (attachedFile && attachedFile.size > 500 * 1024) {
+        finalLaudoURL = await uploadFile(attachedFile, 'laudo');
+      }
+      
+      if (renovadoraFile && renovadoraFile.size > 500 * 1024) {
+        finalRenovadoraURL = await uploadFile(renovadoraFile, 'renovadora');
+      }
+
+      onSuccess({
+        ...formData,
+        date: new Date().toLocaleDateString('pt-BR'),
+        time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        attachment: attachedFile ? attachedFile.name : null,
+        attachmentData: finalLaudoURL,
+        renovadoraAttachment: renovadoraFile ? renovadoraFile.name : null,
+        renovadoraData: finalRenovadoraURL,
+        userEmail: user?.email || 'Sistema',
+      });
+      setIsSuccess(true);
+    } catch (error) {
+      console.error("Erro ao processar anexos:", error);
+      alert("Erro ao enviar arquivos de laudo. Tente novamente.");
+    } finally {
+      setIsUploading(false);
+    }
+  };;
 
   const handleNewRegistration = () => {
     setFormData({ plate: '', warehouse: '', reason: '', technician: '', dot: '', tireFogo: '', lifeCycle: '', removalDate: '' });
@@ -496,12 +529,21 @@ export default function RegistrationTab({ onSuccess, onTabChange }: Registration
 
                 <button 
                   type="submit"
-                  disabled={plateError}
-                  className={`group relative px-16 py-5 ${plateError ? 'bg-slate-300 dark:bg-slate-800 cursor-not-allowed border-slate-200' : 'bg-slate-950 dark:bg-sky-600 border-slate-800 dark:border-sky-700 hover:bg-slate-900 dark:hover:bg-sky-500 hover:translate-y-[-2px]'} text-white font-black text-xs uppercase tracking-[0.4em] rounded-2xl transition-all shadow-2xl ${!plateError && 'hover:shadow-slate-900/20 dark:hover:shadow-sky-600/20'} active:scale-95 flex items-center gap-4 border-b-4`}
+                  disabled={plateError || isUploading}
+                  className={`group relative px-16 py-5 ${plateError || isUploading ? 'bg-slate-300 dark:bg-slate-800 cursor-not-allowed border-slate-200' : 'bg-slate-950 dark:bg-sky-600 border-slate-800 dark:border-sky-700 hover:bg-slate-900 dark:hover:bg-sky-500 hover:translate-y-[-2px]'} text-white font-black text-xs uppercase tracking-[0.4em] rounded-2xl transition-all shadow-2xl ${!plateError && !isUploading && 'hover:shadow-slate-900/20 dark:hover:shadow-sky-600/20'} active:scale-95 flex items-center gap-4 border-b-4`}
                 >
-                  <ShieldCheck className="w-5 h-5" />
-                  Transmitir Dados
-                  {!plateError && <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />}
+                  {isUploading ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Transmitindo...
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="w-5 h-5" />
+                      Transmitir Dados
+                      {!plateError && <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />}
+                    </>
+                  )}
                 </button>
               </div>
             </form>

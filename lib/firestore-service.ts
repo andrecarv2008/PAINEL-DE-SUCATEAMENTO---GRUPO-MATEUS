@@ -72,6 +72,7 @@ export interface Registration {
   attachmentData?: string | null;
   renovadoraAttachment?: string | null;
   renovadoraData?: string | null;
+  userEmail?: string | null;
   status: 'pending' | 'confirmed';
   createdAt?: any;
 }

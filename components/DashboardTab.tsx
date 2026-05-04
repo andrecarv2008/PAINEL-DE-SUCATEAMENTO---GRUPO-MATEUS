@@ -16,24 +16,34 @@ import {
 } from 'recharts';
 import { useRegistrations } from '@/lib/firestore-service';
 import { useAuth } from '@/hooks/useAuth';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 const COLORS = ['#0ea5e9', '#38bdf8', '#7dd3fc', '#0284c7', '#a855f7', '#d8b4fe'];
 
 export default function DashboardTab() {
   const { warehouse: userWarehouse } = useAuth();
   const { registrations, loading } = useRegistrations(userWarehouse);
+  const [selectedBranch, setSelectedBranch] = useState<string>('all');
+
+  const branches = useMemo(() => {
+    const uniqueBranches = Array.from(new Set(registrations.map(r => r.warehouse))).filter(Boolean);
+    return ['all', ...uniqueBranches.sort()];
+  }, [registrations]);
 
   const statsData = useMemo(() => {
-    const total = registrations.length;
-    const confirmedCount = registrations.filter(r => r.status === 'confirmed').length;
-    const pendingCount = registrations.filter(r => !r.status || r.status === 'pending').length;
-    const byReason = registrations.reduce((acc: any, curr) => {
+    const filtered = selectedBranch === 'all' 
+      ? registrations 
+      : registrations.filter(r => r.warehouse === selectedBranch);
+
+    const total = filtered.length;
+    const confirmedCount = filtered.filter(r => r.status === 'confirmed').length;
+    const pendingCount = filtered.filter(r => !r.status || r.status === 'pending').length;
+    const byReason = filtered.reduce((acc: any, curr) => {
       acc[curr.reason] = (acc[curr.reason] || 0) + 1;
       return acc;
     }, {});
 
-    const byBranch = registrations.reduce((acc: any, curr) => {
+    const byBranch = filtered.reduce((acc: any, curr) => {
       acc[curr.warehouse] = (acc[curr.warehouse] || 0) + 1;
       return acc;
     }, {});
@@ -41,7 +51,7 @@ export default function DashboardTab() {
     const months = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
     const trend = months.map(m => ({ name: m, baixas: 0 }));
     
-    registrations.forEach(r => {
+    filtered.forEach(r => {
       if (r.date) {
         const parts = r.date.split('/');
         if (parts.length === 3) {
@@ -54,15 +64,26 @@ export default function DashboardTab() {
     const branchChartData = Object.entries(byBranch).map(([name, value]) => ({ 
       name, 
       value: value as number 
-    })).sort((a, b) => b.value - a.value).slice(0, 6);
+    })).sort((a, b) => b.value - a.value);
 
     const reasonChartData = Object.entries(byReason).map(([name, value]) => ({ 
       name, 
       value: value as number 
     })).sort((a, b) => b.value - a.value).slice(0, 10);
 
-    return { total, confirmedCount, pendingCount, byReason, byBranch, trend, branchChartData, reasonChartData };
-  }, [registrations]);
+    const byUser = filtered.reduce((acc: any, curr) => {
+      const userKey = curr.userEmail || 'Anônimo';
+      acc[userKey] = (acc[userKey] || 0) + 1;
+      return acc;
+    }, {});
+
+    const userChartData = Object.entries(byUser).map(([name, value]) => ({ 
+      name, 
+      value: value as number 
+    })).sort((a, b) => b.value - a.value).slice(0, 5);
+
+    return { total, confirmedCount, pendingCount, byReason, byBranch, trend, branchChartData, reasonChartData, userChartData };
+  }, [registrations, selectedBranch]);
 
   const stats = [
     { 
@@ -127,14 +148,32 @@ export default function DashboardTab() {
             Interface de Inteligência e Monitoramento de Frota
           </div>
         </div>
-        <div className="flex items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.05] p-3 pl-5 rounded-2xl shadow-sm backdrop-blur-xl">
-          <div className="relative">
-            <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
-            <div className="absolute inset-0 w-2.5 h-2.5 bg-green-500 rounded-full animate-ping opacity-40" />
+
+        <div className="flex flex-col md:flex-row items-center gap-4">
+          <div className="flex flex-col items-start gap-1">
+            <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">Filtrar por Filial</label>
+            <select 
+              value={selectedBranch}
+              onChange={(e) => setSelectedBranch(e.target.value)}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.05] text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 py-3 px-6 rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-sky-500/20 uppercase appearance-none cursor-pointer min-w-[240px]"
+            >
+              {branches.map(b => (
+                <option key={b} value={b}>
+                  {b === 'all' ? 'TODAS AS FILIAIS (GLOBAL)' : b}
+                </option>
+              ))}
+            </select>
           </div>
-          <div className="flex flex-col pr-4">
-            <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">Status da Telemetria</span>
-            <span className="text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 mt-1.5 uppercase tabular-nums">LIVE UPDATES ACTIVE • {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+
+          <div className="flex items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.05] p-3 pl-5 rounded-2xl shadow-sm backdrop-blur-xl">
+            <div className="relative">
+              <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
+              <div className="absolute inset-0 w-2.5 h-2.5 bg-green-500 rounded-full animate-ping opacity-40" />
+            </div>
+            <div className="flex flex-col pr-4">
+              <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">Status da Telemetria</span>
+              <span className="text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 mt-1.5 uppercase tabular-nums">LIVE UPDATES ACTIVE • {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -173,7 +212,7 @@ export default function DashboardTab() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         {/* Reasons Chart Column */}
-        <div className="lg:col-span-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.05] rounded-[2.5rem] p-10 shadow-sm relative overflow-hidden">
+        <div className="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.05] rounded-[2.5rem] p-10 shadow-sm relative overflow-hidden">
           <div className="flex items-center gap-4 mb-10">
             <div className="p-3 bg-red-100 dark:bg-red-500/10 rounded-2xl border border-red-200 dark:border-red-500/20">
               <PackageX className="w-5 h-5 text-red-600 dark:text-red-400" />
@@ -228,6 +267,40 @@ export default function DashboardTab() {
                 />
               </BarChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Top Operators Column */}
+        <div className="lg:col-span-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.05] rounded-[2.5rem] p-10 shadow-sm flex flex-col">
+          <div className="flex items-center gap-4 mb-10">
+            <div className="p-3 bg-sky-100 dark:bg-sky-500/10 rounded-2xl border border-sky-200 dark:border-sky-500/20">
+               <Activity className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+            </div>
+            <div>
+              <h3 className="font-black text-slate-900 dark:text-white uppercase text-sm tracking-[0.2em] leading-none">Top Operadores</h3>
+              <p className="text-[9px] font-mono font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-2 italic">Volume de Registros por Usuário</p>
+            </div>
+          </div>
+          
+          <div className="space-y-6">
+            {statsData.userChartData?.map((u: any, i: number) => (
+              <div key={u.name} className="flex flex-col p-4 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/[0.05] rounded-2xl">
+                 <div className="flex justify-between items-center mb-2">
+                    <span className="text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 truncate max-w-[180px]">{u.name}</span>
+                    <span className="text-lg font-mono font-black text-sky-600 leading-none">{u.value}</span>
+                 </div>
+                 <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(u.value / statsData.total) * 100}%` }}
+                      className="h-full bg-sky-500"
+                    />
+                 </div>
+              </div>
+            ))}
+            {(!statsData.userChartData || statsData.userChartData.length === 0) && (
+              <p className="text-center text-[10px] text-slate-400 uppercase font-bold py-10">Fila de Operadores Vazia</p>
+            )}
           </div>
         </div>
       </div>
