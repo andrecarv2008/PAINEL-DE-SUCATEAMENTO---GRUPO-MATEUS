@@ -65,7 +65,7 @@ export function useAuth() {
                 } else {
                   // Fallback defaults
                   const defaults: any = {
-                    TECHNICIAN: { viewDashboard: true, registerWithdrawal: true, accessAnalystPanel: false, confirmTechnicalWithdrawal: false, viewGeneralHistory: true, managePermissions: false, deleteRecords: false, importData: false },
+                    TECHNICIAN: { viewDashboard: false, registerWithdrawal: true, accessAnalystPanel: false, confirmTechnicalWithdrawal: false, viewGeneralHistory: true, managePermissions: false, deleteRecords: false, importData: false },
                     ANALYST: { viewDashboard: true, registerWithdrawal: true, accessAnalystPanel: true, confirmTechnicalWithdrawal: true, viewGeneralHistory: true, managePermissions: false, deleteRecords: false, importData: true }
                   };
                   setPermissions(defaults[userRole] || null);
@@ -75,7 +75,7 @@ export function useAuth() {
             } else {
               setRole('TECHNICIAN');
               setWarehouse(null);
-              setPermissions({ viewDashboard: true, registerWithdrawal: true, accessAnalystPanel: false, confirmTechnicalWithdrawal: false, viewGeneralHistory: true, managePermissions: false, deleteRecords: false, importData: false });
+              setPermissions({ viewDashboard: false, registerWithdrawal: true, accessAnalystPanel: false, confirmTechnicalWithdrawal: false, viewGeneralHistory: true, managePermissions: false, deleteRecords: false, importData: false });
               setLoading(false);
             }
           }, (error) => {
@@ -102,10 +102,17 @@ export function useAuth() {
 
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
     try {
+      // Try popup first
       await signInWithPopup(auth, provider);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error signing in with Google:", error);
+      // If popup is blocked, we can't easily auto-fallback to redirect in this environment 
+      // without proper redirect URL configuration, so we throw to let the UI handle it.
+      if (error.code === 'auth/popup-blocked') {
+        throw new Error('Pop-up bloqueado pelo navegador. Por favor, permita pop-ups para este site.');
+      }
       throw error;
     }
   };

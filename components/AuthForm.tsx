@@ -53,7 +53,7 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
       onSuccess?.();
     } catch (err: any) {
       console.error("Google Auth error:", err);
-      setError('Erro ao entrar com Google. Verifique pop-ups ou tente novamente.');
+      setError(err.message || 'Erro ao entrar com Google. Verifique pop-ups ou tente novamente.');
     } finally {
       setLoading(false);
     }

@@ -16,10 +16,24 @@ import { Terminal, ShieldCheck } from 'lucide-react';
 import AuthForm from '@/components/AuthForm';
 
 export default function Page() {
-  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
-  const [historyFilter, setHistoryFilter] = useState<'all' | 'pending' | 'confirmed'>('all');
   const { user, role, warehouse, permissions, loading: authLoading } = useAuth();
   const { registrations, addRegistration, confirmRegistration, deleteRegistration, refresh } = useRegistrations(warehouse);
+  const [activeTab, setActiveTab] = useState<TabType>('registration');
+  const [historyFilter, setHistoryFilter] = useState<'all' | 'pending' | 'confirmed'>('all');
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && permissions && !initialized) {
+      if (permissions.viewDashboard) {
+        setActiveTab('dashboard');
+      } else if (permissions.registerWithdrawal) {
+        setActiveTab('registration');
+      } else if (permissions.viewGeneralHistory) {
+        setActiveTab('history');
+      }
+      setInitialized(true);
+    }
+  }, [authLoading, permissions, initialized]);
 
   const handleTabChange = (tab: TabType) => {
     if (tab === 'history') {
