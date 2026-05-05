@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Search, Filter, MoreVertical, ExternalLink, Archive, FileText, Download, ChevronRight, Eye, Check, Loader2, Trash2 } from 'lucide-react';
+import { Search, Filter, MoreVertical, ExternalLink, Archive, FileText, Download, ChevronRight, Eye, Check, Loader2, Trash2, RefreshCw } from 'lucide-react';
 
 interface HistoryItem {
   id?: string;
@@ -20,7 +20,7 @@ interface HistoryItem {
   dot: string;
   tireFogo: string;
   lifeCycle: string;
-  removalDate?: string;
+  removalDate?: string | null;
 }
 
 interface HistoryTabProps {
@@ -31,6 +31,8 @@ interface HistoryTabProps {
   onConfirmAction?: (id: string) => Promise<void>;
   onDeleteAction?: (id: string) => Promise<void>;
   canDelete?: boolean;
+  initialFilter?: 'all' | 'pending' | 'confirmed';
+  onRefresh?: () => Promise<void>;
 }
 
 export default function HistoryTab({ 
@@ -40,13 +42,23 @@ export default function HistoryTab({
   onConfirmed, 
   onConfirmAction,
   onDeleteAction,
-  canDelete = false
+  canDelete = false,
+  initialFilter = 'all',
+  onRefresh
 }: HistoryTabProps) {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed'>('all');
+  const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed'>(initialFilter);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    if (!onRefresh) return;
+    setIsRefreshing(true);
+    await onRefresh();
+    setTimeout(() => setIsRefreshing(false), 1000);
+  };
 
   const filteredHistory = history.filter(record => {
     const term = searchTerm.toLowerCase();
@@ -68,6 +80,16 @@ export default function HistoryTab({
           <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.4em]">Operational Ledger & Compliance Registry</p>
         </div>
         <div className="flex gap-2">
+            {onRefresh && (
+              <button 
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.05] rounded-lg text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                Sincronizar
+              </button>
+            )}
             <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.05] rounded-lg text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm">
               <Download className="w-3.5 h-3.5" />
               Exportar CSV
@@ -191,7 +213,14 @@ export default function HistoryTab({
                        </div>
                     </td>
                     <td className="px-6 py-4 hidden lg:table-cell text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-tighter tabular-nums">
-                       {record.date} <br/> {record.time}
+                       <div className="flex flex-col">
+                          <span>REG: {record.date} {record.time}</span>
+                          {record.removalDate && (
+                            <span className="text-sky-600 dark:text-sky-400 font-black mt-1">
+                              DESINST: {record.removalDate.split('-').reverse().join('/')}
+                            </span>
+                          )}
+                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">
                        <div className="flex items-center justify-end gap-3">

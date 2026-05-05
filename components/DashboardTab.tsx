@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { PackageX, Archive, Clock, Home, ArrowUpRight, ArrowDownRight, TrendingUp, Activity, PieChart as PieChartIcon, Loader2 } from 'lucide-react';
+import { PackageX, Archive, Clock, Home, ArrowUpRight, ArrowDownRight, TrendingUp, Activity, PieChart as PieChartIcon, Loader2, RefreshCw } from 'lucide-react';
 import { 
   BarChart,
   Bar,
@@ -24,9 +24,16 @@ const COLORS = ['#0ea5e9', '#38bdf8', '#7dd3fc', '#0284c7', '#a855f7', '#d8b4fe'
 
 export default function DashboardTab() {
   const { warehouse: userWarehouse } = useAuth();
-  const { registrations, loading } = useRegistrations(userWarehouse);
+  const { registrations, loading, refresh } = useRegistrations(userWarehouse);
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refresh();
+    setTimeout(() => setIsRefreshing(false), 1000);
+  };
 
   const branches = useMemo(() => {
     const uniqueBranches = Array.from(new Set(registrations.map(r => r.warehouse))).filter(Boolean);
@@ -126,6 +133,7 @@ export default function DashboardTab() {
       // Data Table
       const tableData = statsData.filteredData.map(r => [
         r.date || '',
+        r.removalDate ? r.removalDate.split('-').reverse().join('/') : '-',
         r.plate || '',
         r.warehouse || '',
         r.reason || '',
@@ -135,11 +143,11 @@ export default function DashboardTab() {
 
       autoTable(doc, {
         startY: 95,
-        head: [['DATA', 'PLACA', 'FILIAL', 'MOTIVO', 'TÉCNICO', 'STATUS']],
+        head: [['CADASTRO', 'DESINST.', 'PLACA', 'FILIAL', 'MOTIVO', 'TÉCNICO', 'STATUS']],
         body: tableData,
         theme: 'striped',
         headStyles: { fillColor: [14, 165, 233] },
-        styles: { fontSize: 8, font: 'helvetica' }
+        styles: { fontSize: 7, font: 'helvetica' }
       });
 
       doc.save(`Relatorio_Executivo_${new Date().toISOString().split('T')[0]}.pdf`);
@@ -232,13 +240,16 @@ export default function DashboardTab() {
           </div>
 
           <div className="flex items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/[0.05] p-3 pl-5 rounded-2xl shadow-sm backdrop-blur-xl">
-            <div className="relative">
-              <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
-              <div className="absolute inset-0 w-2.5 h-2.5 bg-green-500 rounded-full animate-ping opacity-40" />
-            </div>
+            <button 
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className={`p-2 rounded-xl transition-all ${isRefreshing ? 'bg-sky-100 dark:bg-sky-500/20 text-sky-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-sky-600'}`}
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
             <div className="flex flex-col pr-4">
               <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">Status da Telemetria</span>
-              <span className="text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 mt-1.5 uppercase tabular-nums">LIVE UPDATES ACTIVE • {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+              <span className="text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 mt-1.5 uppercase tabular-nums">SINCRONIA MANUAL • {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
           </div>
         </div>

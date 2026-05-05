@@ -6,7 +6,8 @@ import {
   query, 
   orderBy, 
   where,
-  onSnapshot, 
+  getDocs,
+  getDoc,
   addDoc, 
   serverTimestamp,
   doc,
@@ -68,6 +69,7 @@ export interface Registration {
   lifeCycle: string;
   date: string;
   time: string;
+  removalDate?: string | null;
   attachment?: string | null;
   attachmentData?: string | null;
   renovadoraAttachment?: string | null;
@@ -81,15 +83,20 @@ export function useUserRoles() {
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, 'userRoles'), (snapshot) => {
+  const fetchRoles = async () => {
+    try {
+      setLoading(true);
+      const snapshot = await getDocs(collection(db, 'userRoles'));
       setRoles(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserRole)));
-      setLoading(false);
-    }, (error) => {
+    } catch (error) {
       handleFirestoreError(error, OperationType.LIST, 'userRoles');
+    } finally {
       setLoading(false);
-    });
-    return () => unsubscribe();
+    }
+  };
+
+  useEffect(() => {
+    fetchRoles();
   }, []);
 
   const setRole = async (email: string, role: string, warehouse: string | null = null) => {
@@ -101,6 +108,7 @@ export function useUserRoles() {
         warehouse,
         updatedAt: serverTimestamp()
       });
+      await fetchRoles();
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, `userRoles/${email}`);
     }
@@ -110,12 +118,13 @@ export function useUserRoles() {
     try {
       const { deleteDoc, doc } = await import('firebase/firestore');
       await deleteDoc(doc(db, 'userRoles', email));
+      await fetchRoles();
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `userRoles/${email}`);
     }
   };
 
-  return { roles, loading, setRole, removeRole };
+  return { roles, loading, setRole, removeRole, refresh: fetchRoles };
 }
 
 export interface RolePermissions {
@@ -137,15 +146,20 @@ export function useRolePermissions() {
   const [roleConfigs, setRoleConfigs] = useState<RolePermissions[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, 'rolePermissions'), (snapshot) => {
+  const fetchPermissions = async () => {
+    try {
+      setLoading(true);
+      const snapshot = await getDocs(collection(db, 'rolePermissions'));
       setRoleConfigs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RolePermissions)));
-      setLoading(false);
-    }, (error) => {
+    } catch (error) {
       handleFirestoreError(error, OperationType.LIST, 'rolePermissions');
+    } finally {
       setLoading(false);
-    });
-    return () => unsubscribe();
+    }
+  };
+
+  useEffect(() => {
+    fetchPermissions();
   }, []);
 
   const updatePermission = async (roleId: string, permissionKey: string, value: boolean) => {
@@ -174,38 +188,43 @@ export function useRolePermissions() {
           [permissionKey]: value
         }
       }, { merge: true });
+      await fetchPermissions();
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, `rolePermissions/${roleId}`);
     }
   };
 
-  return { roleConfigs, loading, updatePermission };
+  return { roleConfigs, loading, updatePermission, refresh: fetchPermissions };
 }
 
 export function useRegistrations(filterWarehouse: string | null = null) {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let q = query(collection(db, 'registrations'), orderBy('createdAt', 'desc'));
-    
-    if (filterWarehouse) {
-      q = query(collection(db, 'registrations'), where('warehouse', '==', filterWarehouse), orderBy('createdAt', 'desc'));
-    }
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+  const fetchRegistrations = async () => {
+    try {
+      setLoading(true);
+      let q = query(collection(db, 'registrations'), orderBy('createdAt', 'desc'));
+      
+      if (filterWarehouse) {
+        q = query(collection(db, 'registrations'), where('warehouse', '==', filterWarehouse), orderBy('createdAt', 'desc'));
+      }
+
+      const snapshot = await getDocs(q);
       const data = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Registration[];
       setRegistrations(data);
-      setLoading(false);
-    }, (error) => {
+    } catch (error) {
       handleFirestoreError(error, OperationType.LIST, 'registrations');
+    } finally {
       setLoading(false);
-    });
+    }
+  };
 
-    return () => unsubscribe();
+  useEffect(() => {
+    fetchRegistrations();
   }, [filterWarehouse]);
 
   const addRegistration = async (registration: Omit<Registration, 'id' | 'createdAt' | 'status'>) => {
@@ -215,6 +234,7 @@ export function useRegistrations(filterWarehouse: string | null = null) {
         status: 'pending',
         createdAt: serverTimestamp()
       });
+      await fetchRegistrations();
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'registrations');
     }
@@ -225,6 +245,7 @@ export function useRegistrations(filterWarehouse: string | null = null) {
       await updateDoc(doc(db, 'registrations', id), {
         status: 'confirmed'
       });
+      await fetchRegistrations();
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `registrations/${id}`);
     }
@@ -234,12 +255,13 @@ export function useRegistrations(filterWarehouse: string | null = null) {
     try {
       const { deleteDoc, doc } = await import('firebase/firestore');
       await deleteDoc(doc(db, 'registrations', id));
+      await fetchRegistrations();
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `registrations/${id}`);
     }
   };
 
-  return { registrations, loading, addRegistration, confirmRegistration, deleteRegistration };
+  return { registrations, loading, addRegistration, confirmRegistration, deleteRegistration, refresh: fetchRegistrations };
 }
 
 export interface AppSettings {
@@ -250,17 +272,22 @@ export function useSettings() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const unsubscribe = onSnapshot(doc(db, 'settings', 'app'), (snapshot) => {
+  const fetchSettings = async () => {
+    try {
+      setLoading(true);
+      const snapshot = await getDoc(doc(db, 'settings', 'app'));
       if (snapshot.exists()) {
         setSettings(snapshot.data() as AppSettings);
       }
+    } catch (error) {
+      // It's fine if the document doesn't exist
+    } finally {
       setLoading(false);
-    }, (error) => {
-      // It's fine if the document doesn't exist yet
-      setLoading(false);
-    });
-    return () => unsubscribe();
+    }
+  };
+
+  useEffect(() => {
+    fetchSettings();
   }, []);
 
   const updateLogo = async (logoData: string | null) => {
@@ -270,10 +297,11 @@ export function useSettings() {
         logo: logoData,
         updatedAt: serverTimestamp()
       }, { merge: true });
+      await fetchSettings();
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'settings/app');
     }
   };
 
-  return { settings, loading, updateLogo };
+  return { settings, loading, updateLogo, refresh: fetchSettings };
 }

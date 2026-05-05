@@ -17,8 +17,16 @@ import AuthForm from '@/components/AuthForm';
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+  const [historyFilter, setHistoryFilter] = useState<'all' | 'pending' | 'confirmed'>('all');
   const { user, role, warehouse, permissions, loading: authLoading } = useAuth();
-  const { registrations, addRegistration, confirmRegistration, deleteRegistration } = useRegistrations(warehouse);
+  const { registrations, addRegistration, confirmRegistration, deleteRegistration, refresh } = useRegistrations(warehouse);
+
+  const handleTabChange = (tab: TabType) => {
+    if (tab === 'history') {
+      setHistoryFilter('all');
+    }
+    setActiveTab(tab);
+  };
 
   const handleNewRegistration = async (data: any) => {
     await addRegistration(data);
@@ -78,13 +86,13 @@ export default function Page() {
 
       <Header />
       <div className="flex flex-1 pt-16 relative z-10">
-        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} permissions={permissions} />
+        <Sidebar activeTab={activeTab} onTabChange={handleTabChange} permissions={permissions} />
         
         <main className="flex-1 ml-20 lg:ml-64 p-6 md:p-10 transition-all duration-300 relative">
           <div className="max-w-[1600px] mx-auto relative z-10">
             <AnimatePresence mode="wait">
               {activeTab === 'registration' && permissions?.registerWithdrawal && (
-                <RegistrationTab key="reg" onSuccess={handleNewRegistration} onTabChange={setActiveTab} />
+                <RegistrationTab key="reg" onSuccess={handleNewRegistration} onTabChange={handleTabChange} />
               )}
               {activeTab === 'dashboard' && permissions?.viewDashboard && (
                 <DashboardTab key="dash" />
@@ -95,10 +103,14 @@ export default function Page() {
                   history={registrations.filter(r => !r.status || r.status === 'pending')} 
                   title="PAINEL ANALISTA" 
                   isAnalystMode
-                  onConfirmed={() => setActiveTab('history')}
+                  onConfirmed={() => {
+                    setHistoryFilter('confirmed');
+                    setActiveTab('history');
+                  }}
                   onConfirmAction={confirmRegistration}
                   onDeleteAction={deleteRegistration}
                   canDelete={permissions?.deleteRecords}
+                  onRefresh={refresh}
                 />
               )}
               {activeTab === 'history' && permissions?.viewGeneralHistory && (
@@ -106,8 +118,10 @@ export default function Page() {
                   key="hist" 
                   history={registrations} 
                   title="HISTÓRICO GERAL" 
+                  initialFilter={historyFilter}
                   onDeleteAction={deleteRegistration}
                   canDelete={permissions?.deleteRecords}
+                  onRefresh={refresh}
                 />
               )}
               {activeTab === 'permissions' && permissions?.managePermissions && (
@@ -128,7 +142,7 @@ export default function Page() {
                   <h3 className="text-xl font-black text-slate-950 dark:text-white uppercase italic mb-2 tracking-widest">Acesso Restrito</h3>
                   <p className="text-slate-400 dark:text-slate-500 text-xs font-bold uppercase tracking-wider mb-8">Você não possui permissão para acessar esta área.</p>
                   <button 
-                    onClick={() => setActiveTab('dashboard')}
+                    onClick={() => handleTabChange('dashboard')}
                     className="px-8 py-3 bg-sky-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-sky-500 transition-all shadow-lg shadow-sky-600/20"
                   >
                     Voltar ao Dashboard

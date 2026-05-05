@@ -2,17 +2,24 @@
 
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Shield, UserPlus, Trash2, Mail, ShieldCheck, Loader2, ShieldAlert, Building2 } from 'lucide-react';
+import { Shield, UserPlus, Trash2, Mail, ShieldCheck, Loader2, ShieldAlert, Building2, RefreshCw } from 'lucide-react';
 import { useUserRoles, useRolePermissions } from '@/lib/firestore-service';
 import { WAREHOUSES } from '@/lib/constants';
 
 export default function PermissionsTab() {
-  const { roles, loading: rolesLoading, setRole, removeRole } = useUserRoles();
-  const { roleConfigs, loading: permsLoading, updatePermission } = useRolePermissions();
+  const { roles, loading: rolesLoading, setRole, removeRole, refresh: refreshRoles } = useUserRoles();
+  const { roleConfigs, loading: permsLoading, updatePermission, refresh: refreshPermissions } = useRolePermissions();
   const [email, setEmail] = useState('');
   const [role, setRoleType] = useState<'ADMIN' | 'ANALYST' | 'TECHNICIAN'>('TECHNICIAN');
   const [warehouse, setWarehouse] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await Promise.all([refreshRoles(), refreshPermissions()]);
+    setTimeout(() => setIsRefreshing(false), 1000);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -210,9 +217,14 @@ export default function PermissionsTab() {
                 <Shield className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                 Matriz de Terminais Autorizados
               </h3>
-              <div className="px-3 py-1 rounded-full bg-slate-100 dark:bg-white/[0.05] border border-slate-200 dark:border-white/[0.05] text-[9px] font-mono text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
-                Realtime Data
-              </div>
+              <button 
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/[0.05] border border-slate-200 dark:border-white/[0.05] text-[9px] font-mono text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest hover:text-sky-600 transition-colors"
+              >
+                <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Sincronizando...' : 'Sincronia Manual'}
+              </button>
             </div>
             
             <div className="overflow-x-auto">
