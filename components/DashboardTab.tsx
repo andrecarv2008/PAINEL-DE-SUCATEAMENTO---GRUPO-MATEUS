@@ -436,13 +436,21 @@ export default function DashboardTab() {
                   cursor={{ fill: '#94a3b811', radius: 8 }}
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
+                      const monthMap: Record<string, string> = {
+                        'JAN': 'Janeiro', 'FEV': 'Fevereiro', 'MAR': 'Março', 'ABR': 'Abril',
+                        'MAI': 'Maio', 'JUN': 'Junho', 'JUL': 'Julho', 'AGO': 'Agosto',
+                        'SET': 'Setembro', 'OUT': 'Outubro', 'NOV': 'Novembro', 'DEZ': 'Dezembro'
+                      };
+                      const fullMonth = monthMap[label as string] || label;
+                      
                       return (
-                        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/[0.05] p-4 rounded-xl shadow-2xl">
-                          <p className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">{label}</p>
+                        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/[0.05] p-4 rounded-xl shadow-2xl ring-1 ring-black/5">
+                          <p className="text-[10px] font-mono font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Relatório Mensal</p>
+                          <p className="text-xs font-bold text-slate-900 dark:text-white mb-1">{fullMonth}</p>
                           <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-sky-600" />
-                            <p className="text-sm font-mono font-black text-slate-900 dark:text-white">
-                              {payload[0].value} <span className="text-[9px] text-sky-600 ml-1 font-bold">BAIXAS</span>
+                            <div className="w-2 h-2 rounded-full bg-sky-600 shadow-[0_0_8px_rgba(14,165,233,0.5)]" />
+                            <p className="text-sm font-mono font-black text-sky-600 dark:text-sky-400">
+                              {payload[0].value} <span className="text-[9px] text-slate-400 ml-1 font-bold">REGISTROS</span>
                             </p>
                           </div>
                         </div>
